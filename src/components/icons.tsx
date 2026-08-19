@@ -53,6 +53,13 @@ export const ChevronDownIcon = (p: IconProps) => (
   </Icon>
 );
 
+export const SidebarIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M9.5 4v16" />
+  </Icon>
+);
+
 export const RefreshIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M20 11a8 8 0 1 0-.5 4" />

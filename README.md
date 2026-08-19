@@ -118,13 +118,21 @@ avatars (green ring means they approved, gray initials means they still owe a
 review), the overall review decision, the CI check rollup, and how long ago the
 pull request was last updated. Clicking a row opens it on GitHub.
 
+## Sidebar
+
+Press `b`, or click the panel button beside the wordmark, to collapse the
+sidebar to an icon rail. The rail keeps every section's color and count, so you
+can still see what is waiting and jump to a section; hovering a dot names it.
+The choice survives a restart.
+
 ## Keyboard shortcuts
 
-| Key   | Action                     |
-| ----- | -------------------------- |
-| `/`   | Focus the filter box       |
-| `r`   | Refresh                    |
-| `Esc` | Close the settings panel   |
+| Key   | Action                          |
+| ----- | ------------------------------- |
+| `/`   | Focus the filter box            |
+| `r`   | Refresh                         |
+| `b`   | Collapse or expand the sidebar  |
+| `Esc` | Close the settings panel        |
 
 The filter box narrows the pull requests already on screen; it does not re-query
 GitHub. Change a section's query when you want different results.

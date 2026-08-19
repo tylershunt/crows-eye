@@ -10,6 +10,8 @@ import { relativeAgePhrase } from "./lib/format.js";
 
 type Theme = "light" | "dark";
 
+const SIDEBAR_STORAGE_KEY = "crows-eye-sidebar";
+
 export function App() {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [configPath, setConfigPath] = useState("");
@@ -20,6 +22,9 @@ export function App() {
   const [filterText, setFilterText] = useState("");
   const [settingsFocus, setSettingsFocus] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => localStorage.getItem(SIDEBAR_STORAGE_KEY) === "collapsed",
+  );
   const [theme, setTheme] = useState<Theme>(() =>
     document.documentElement.classList.contains("dark") ? "dark" : "light",
   );
@@ -77,6 +82,8 @@ export function App() {
         searchRef.current?.focus();
       } else if (event.key === "r") {
         void refresh();
+      } else if (event.key === "b") {
+        setSidebarCollapsed((current) => !current);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -87,6 +94,10 @@ export function App() {
     document.documentElement.classList.toggle("dark", theme === "dark");
     localStorage.setItem("crows-eye-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, sidebarCollapsed ? "collapsed" : "expanded");
+  }, [sidebarCollapsed]);
 
   const sections = useMemo(
     () => (dashboard?.sections ?? []).map((section) => filterSection(section, filterText)),
@@ -129,6 +140,8 @@ export function App() {
           viewer={dashboard?.viewer ?? null}
           sections={sections}
           theme={theme}
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={() => setSidebarCollapsed((current) => !current)}
           onToggleTheme={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
           onOpenSettings={() => {
             setSettingsFocus(null);
