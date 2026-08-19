@@ -1,5 +1,5 @@
 import type { SectionResult } from "../../shared/types.js";
-import { AlertIcon, ChevronDownIcon, FeatherIcon, SettingsIcon } from "./icons.js";
+import { AlertIcon, ChevronDownIcon, CrowFootIcon, FeatherIcon, SettingsIcon } from "./icons.js";
 import { PullRequestRow } from "./PullRequestRow.js";
 
 interface SectionProps {
@@ -28,9 +28,9 @@ export function Section({ section, collapsed, onToggle, onEdit, loading }: Secti
             <ChevronDownIcon
               className={`h-4 w-4 shrink-0 text-ink-400 transition-transform ${collapsed ? "-rotate-90" : ""}`}
             />
-            <span
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: config.color, boxShadow: `0 0 8px ${config.color}66` }}
+            <CrowFootIcon
+              className="h-4 w-4 shrink-0"
+              style={{ color: config.color, filter: `drop-shadow(0 0 3px ${config.color}66)` }}
             />
             <h2 className="truncate text-sm font-semibold text-ink-900 dark:text-ink-100">{config.title}</h2>
             <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs font-medium tabular-nums text-ink-600 dark:bg-ink-800 dark:text-ink-300">

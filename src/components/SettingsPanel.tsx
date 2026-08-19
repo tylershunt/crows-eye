@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { effectiveQuery, enabledGlobalFilters } from "../../shared/query.js";
 import type { AppConfig, GlobalFilter, SectionConfig } from "../../shared/types.js";
 import { slugify } from "../lib/format.js";
-import { ArrowUpIcon, PlusIcon, TrashIcon } from "./icons.js";
+import { ArrowUpIcon, CrowFootIcon, PlusIcon, TrashIcon } from "./icons.js";
 
 const GLOBAL_FILTER_SUGGESTIONS = [
   "-author:app/dependabot",
@@ -353,13 +353,14 @@ export function SettingsPanel({
                       type="button"
                       onClick={() => updateSection(index, { color: swatch })}
                       title={swatch}
-                      style={{ backgroundColor: swatch }}
-                      className={`h-4 w-4 rounded-full transition ${
+                      className={`rounded-md p-0.5 transition ${
                         section.color.toLowerCase() === swatch
                           ? "ring-2 ring-ink-400 ring-offset-1 dark:ring-offset-ink-900"
-                          : ""
+                          : "opacity-60 hover:opacity-100"
                       }`}
-                    />
+                    >
+                      <CrowFootIcon className="h-4 w-4" style={{ color: swatch }} />
+                    </button>
                   ))}
                 </div>
 

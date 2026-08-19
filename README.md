@@ -122,7 +122,7 @@ pull request was last updated. Clicking a row opens it on GitHub.
 
 Press `b`, or click the panel button beside the wordmark, to collapse the
 sidebar to an icon rail. The rail keeps every section's color and count, so you
-can still see what is waiting and jump to a section; hovering a dot names it.
+can still see what is waiting and jump to a section; hovering a track names it.
 The choice survives a restart.
 
 ## Keyboard shortcuts
@@ -145,6 +145,9 @@ shows your remaining GitHub GraphQL rate limit; each refresh costs roughly one
 point per section out of 5,000 per hour.
 
 ## Theme
+
+Each section is marked by a crow's track in its accent color, in the sidebar and
+on the section header. The color is per-section and set in Settings.
 
 The palette follows a crow: `ink` for the cool near-black neutrals, `sheen` for
 the violet iridescence on the wing, `plume` for its teal edge, and `glint` for
