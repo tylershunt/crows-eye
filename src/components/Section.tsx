@@ -1,5 +1,6 @@
 import type { SectionResult } from "../../shared/types.js";
 import { AlertIcon, ChevronDownIcon, CrowFootIcon, FeatherIcon, SettingsIcon } from "./icons.js";
+import { groupIntoStacks } from "../lib/stacks.js";
 import { PullRequestRow } from "./PullRequestRow.js";
 
 interface SectionProps {
@@ -67,9 +68,30 @@ export function Section({ section, collapsed, onToggle, onEdit, loading }: Secti
               </div>
             ) : (
               <>
-                {pullRequests.map((pr) => (
-                  <PullRequestRow key={pr.id} pr={pr} />
-                ))}
+                {groupIntoStacks(pullRequests).map((group) =>
+                  group.rows.length === 1 ? (
+                    <PullRequestRow
+                      key={group.id}
+                      pr={group.rows[0]!.pullRequest}
+                      detached={group.rows[0]!.detached}
+                    />
+                  ) : (
+                    <div key={group.id} className="relative">
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute bottom-3 left-[9px] top-3 w-px"
+                        style={{ backgroundColor: config.color, opacity: 0.5 }}
+                      />
+                      {group.rows.map((row) => (
+                        <PullRequestRow
+                          key={row.pullRequest.id}
+                          pr={row.pullRequest}
+                          depth={row.depth}
+                        />
+                      ))}
+                    </div>
+                  ),
+                )}
                 {hiddenCount > 0 && (
                   <p className="px-4 py-2 text-xs text-ink-400 dark:text-ink-500">
                     {hiddenCount} more match this filter. Raise the section limit to see them.

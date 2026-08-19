@@ -32,6 +32,8 @@ For a production-style run that serves the built assets from the sidecar alone:
 npm start   # builds, then serves everything on http://localhost:8787
 ```
 
+`npm test` runs the unit tests with Node's built-in test runner.
+
 ### Ports
 
 | Variable                | Default            | Purpose            |
@@ -124,6 +126,22 @@ Press `b`, or click the panel button beside the wordmark, to collapse the
 sidebar to an icon rail. The rail keeps every section's color and count, so you
 can still see what is waiting and jump to a section; hovering a track names it.
 The choice survives a restart.
+
+## Stacks
+
+Pull requests stacked on one another are grouped together and indented under
+the one they build on, with a connector down the left of the group.
+
+A stack is detected structurally: a pull request is stacked on another when it
+merges into that one's branch in the same repository. That is how Graphite,
+`gh`, and hand-built stacks all express the relationship, so no extra tooling
+or token is involved. A parent can have several children, so a stack is drawn
+as a tree rather than a single chain.
+
+Only the members that a section's own query returned can be grouped. A pull
+request built on a branch whose pull request is not in that section is instead
+marked with a stack icon, so it is not mistaken for standalone work; hover it
+to see the branch it builds on.
 
 ## Keyboard shortcuts
 

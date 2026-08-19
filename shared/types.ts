@@ -39,6 +39,18 @@ export interface PullRequest {
   repo: string;
   isPrivate: boolean;
   isDraft: boolean;
+  /** The branch this pull request merges into. */
+  baseRef: string;
+  /** The branch holding this pull request's commits. */
+  headRef: string;
+  /**
+   * Whether `baseRef` is a branch other than the repository's default.
+   *
+   * True for a pull request stacked on another branch, whether that stack was
+   * built by Graphite, `gh`, or by hand, and regardless of whether the parent
+   * pull request is among the results being displayed.
+   */
+  targetsNonDefaultBranch: boolean;
   state: PullRequestState;
   createdAt: string;
   updatedAt: string;

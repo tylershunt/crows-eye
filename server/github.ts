@@ -35,7 +35,9 @@ fragment PullRequestFields on PullRequest {
   isReadByViewer
   reviewDecision
   mergeable
-  repository { nameWithOwner isPrivate }
+  baseRefName
+  headRefName
+  repository { nameWithOwner isPrivate defaultBranchRef { name } }
   author { login avatarUrl url }
   labels(first: 10) { nodes { name color } }
   reviewRequests(first: 10) {
@@ -144,6 +146,11 @@ function toPullRequest(raw: RawPullRequest): PullRequest {
     repo: raw.repository.nameWithOwner,
     isPrivate: raw.repository.isPrivate,
     isDraft: raw.isDraft,
+    baseRef: raw.baseRefName,
+    headRef: raw.headRefName,
+    targetsNonDefaultBranch: raw.repository.defaultBranchRef
+      ? raw.baseRefName !== raw.repository.defaultBranchRef.name
+      : false,
     state: raw.state as PullRequestState,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
@@ -240,7 +247,13 @@ interface RawPullRequest {
   isReadByViewer: boolean | null;
   reviewDecision: string | null;
   mergeable: "MERGEABLE" | "CONFLICTING" | "UNKNOWN";
-  repository: { nameWithOwner: string; isPrivate: boolean };
+  baseRefName: string;
+  headRefName: string;
+  repository: {
+    nameWithOwner: string;
+    isPrivate: boolean;
+    defaultBranchRef: { name: string } | null;
+  };
   author: Actor | null;
   labels: { nodes: { name: string; color: string }[] };
   reviewRequests: { nodes: { requestedReviewer: { login?: string; name?: string } | null }[] };

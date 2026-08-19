@@ -29,6 +29,7 @@
     "dev:server": "tsx watch server/index.ts",
     "dev:web": "vite",
     "build": "tsc --noEmit && vite build",
+    "test": "tsx --test $(find src shared -name '*.test.ts' | sort)",
     "start": "npm run build && tsx server/index.ts",
     "typecheck": "tsc --noEmit"
   },

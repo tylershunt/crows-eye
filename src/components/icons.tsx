@@ -53,6 +53,13 @@ export const ChevronDownIcon = (p: IconProps) => (
   </Icon>
 );
 
+export const StackIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 3.5 3.5 8l8.5 4.5L20.5 8 12 3.5Z" />
+    <path d="m3.5 13 8.5 4.5 8.5-4.5" />
+  </Icon>
+);
+
 /** A crow's track: three forward toes and a hallux, used as the section marker. */
 export const CrowFootIcon = (p: IconProps) => (
   <Icon strokeWidth={3} {...p}>
