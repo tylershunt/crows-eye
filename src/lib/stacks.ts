@@ -2,8 +2,13 @@ import type { PullRequest } from "../../shared/types.js";
 
 export interface StackRow {
   pullRequest: PullRequest;
-  /** Levels below the top of its stack; 0 for a pull request with no parent present. */
-  depth: number;
+  /**
+   * The pull request this one is stacked on, when that one is also present.
+   *
+   * Two rows sharing a parent are on sibling branches: both build on it, and
+   * neither builds on the other.
+   */
+  parent: PullRequest | null;
   /**
    * The pull request builds on another branch, but that branch's pull request is
    * not among these results, so its stack cannot be drawn.
@@ -46,21 +51,22 @@ export function groupIntoStacks(pullRequests: PullRequest[]): StackGroup[] {
   }
 
   const placed = new Set<string>();
-  const collect = (current: PullRequest, depth: number, rows: StackRow[]) => {
+  const collect = (current: PullRequest, rows: StackRow[]) => {
     if (placed.has(current.id)) return;
     placed.add(current.id);
+    const parent = parents.get(current.id) ?? null;
     rows.push({
       pullRequest: current,
-      depth,
-      detached: depth === 0 && current.targetsNonDefaultBranch,
+      parent,
+      detached: !parent && current.targetsNonDefaultBranch,
     });
-    for (const child of children.get(current.id) ?? []) collect(child, depth + 1, rows);
+    for (const child of children.get(current.id) ?? []) collect(child, rows);
   };
 
   const groups: StackGroup[] = [];
   const groupFrom = (pullRequest: PullRequest) => {
     const rows: StackRow[] = [];
-    collect(pullRequest, 0, rows);
+    collect(pullRequest, rows);
     if (rows.length > 0) groups.push({ id: pullRequest.id, rows });
   };
 

@@ -17,15 +17,13 @@ import {
 
 interface PullRequestRowProps {
   pr: PullRequest;
-  /** Indents the row under the pull request it is stacked on. */
-  depth?: number;
+  /** The pull request this one is stacked on, when it is shown in the same section. */
+  stackedOn?: PullRequest | null;
   /** Marks a pull request stacked on a branch whose pull request is not shown here. */
   detached?: boolean;
 }
 
-const INDENT_PER_LEVEL = 22;
-
-export function PullRequestRow({ pr, depth = 0, detached = false }: PullRequestRowProps) {
+export function PullRequestRow({ pr, stackedOn = null, detached = false }: PullRequestRowProps) {
   const { ref: titleRef, title: titleTooltip } = useOverflowTitle<HTMLSpanElement>(pr.title);
 
   return (
@@ -33,7 +31,6 @@ export function PullRequestRow({ pr, depth = 0, detached = false }: PullRequestR
       href={pr.url}
       target="_blank"
       rel="noreferrer"
-      style={depth > 0 ? { paddingLeft: 16 + depth * INDENT_PER_LEVEL } : undefined}
       className="group relative flex items-center gap-3 border-b border-ink-100 px-4 py-2.5 transition-colors last:border-b-0 hover:bg-sheen-500/5 dark:border-ink-800/70 dark:hover:bg-sheen-500/10"
     >
       {!pr.isRead && (
@@ -74,9 +71,17 @@ export function PullRequestRow({ pr, depth = 0, detached = false }: PullRequestR
         </div>
 
         <div className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-ink-500 dark:text-ink-400">
-          {detached && (
-            <span title={`Stacked on ${pr.baseRef}`} className="shrink-0 text-sheen-500 dark:text-sheen-400">
+          {(stackedOn || detached) && (
+            <span
+              title={
+                stackedOn
+                  ? `Stacked on #${stackedOn.number} — ${stackedOn.title}`
+                  : `Stacked on ${pr.baseRef}`
+              }
+              className="flex shrink-0 items-center gap-1 text-sheen-600 dark:text-sheen-400"
+            >
               <StackIcon className="h-3 w-3" />
+              {stackedOn && <span className="tabular-nums">on #{stackedOn.number}</span>}
             </span>
           )}
           {pr.isPrivate && <LockIcon className="h-3 w-3 shrink-0" />}

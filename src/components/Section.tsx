@@ -79,14 +79,14 @@ export function Section({ section, collapsed, onToggle, onEdit, loading }: Secti
                     <div key={group.id} className="relative">
                       <span
                         aria-hidden
-                        className="pointer-events-none absolute bottom-3 left-[9px] top-3 w-px"
-                        style={{ backgroundColor: config.color, opacity: 0.5 }}
+                        className="pointer-events-none absolute bottom-2.5 left-[7px] top-2.5 w-0.5 rounded-full"
+                        style={{ backgroundColor: config.color, opacity: 0.55 }}
                       />
                       {group.rows.map((row) => (
                         <PullRequestRow
                           key={row.pullRequest.id}
                           pr={row.pullRequest}
-                          depth={row.depth}
+                          stackedOn={row.parent}
                         />
                       ))}
                     </div>

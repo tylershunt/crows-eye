@@ -129,19 +129,23 @@ The choice survives a restart.
 
 ## Stacks
 
-Pull requests stacked on one another are grouped together and indented under
-the one they build on, with a connector down the left of the group.
+Pull requests stacked on one another are moved next to each other and joined by
+a bar in the section's color. Rows are not indented; instead each one names the
+pull request it sits on, as `on #1234`. Hovering that gives the parent's title.
+
+Naming the parent rather than indenting means sibling branches read correctly:
+two pull requests that both build on `#1234` each say `on #1234`, which says
+they are siblings, where indentation would have implied one sat on the other.
 
 A stack is detected structurally: a pull request is stacked on another when it
 merges into that one's branch in the same repository. That is how Graphite,
 `gh`, and hand-built stacks all express the relationship, so no extra tooling
-or token is involved. A parent can have several children, so a stack is drawn
-as a tree rather than a single chain.
+or token is involved.
 
 Only the members that a section's own query returned can be grouped. A pull
 request built on a branch whose pull request is not in that section is instead
-marked with a stack icon, so it is not mistaken for standalone work; hover it
-to see the branch it builds on.
+marked with a stack icon alone, so it is not mistaken for standalone work;
+hover it to see the branch it builds on.
 
 ## Keyboard shortcuts
 

@@ -20,10 +20,13 @@ function pullRequest(
   } as unknown as PullRequest;
 }
 
-/** Each row as `id@depth`, suffixed with `!` when flagged as detached. */
+/** Each row as `id` or `id<-parentId`, suffixed with `!` when flagged as detached. */
 function shape(pullRequests: PullRequest[]): string[][] {
   return groupIntoStacks(pullRequests).map((group) =>
-    group.rows.map((row) => `${row.pullRequest.id}@${row.depth}${row.detached ? "!" : ""}`),
+    group.rows.map(
+      (row) =>
+        `${row.pullRequest.id}${row.parent ? `<-${row.parent.id}` : ""}${row.detached ? "!" : ""}`,
+    ),
   );
 }
 
@@ -34,25 +37,25 @@ test("a stack is emitted from its base upwards, whatever order it arrives in", (
     pullRequest("b", "b", "a"),
   ]);
 
-  assert.deepEqual(rows, [["a@0", "b@1", "c@2"]]);
+  assert.deepEqual(rows, [["a", "b<-a", "c<-b"]]);
 });
 
-test("two pull requests on the same parent are siblings, not a chain", () => {
+test("two pull requests on the same parent name that parent, not each other", () => {
   const rows = shape([
     pullRequest("root", "root", "main"),
     pullRequest("x", "x", "root"),
     pullRequest("y", "y", "root"),
   ]);
 
-  assert.deepEqual(rows, [["root@0", "x@1", "y@1"]]);
+  assert.deepEqual(rows, [["root", "x<-root", "y<-root"]]);
 });
 
 test("a pull request stacked on an absent parent is flagged rather than grouped", () => {
-  assert.deepEqual(shape([pullRequest("lone", "lone", "someone-elses-branch")]), [["lone@0!"]]);
+  assert.deepEqual(shape([pullRequest("lone", "lone", "someone-elses-branch")]), [["lone!"]]);
 });
 
 test("a pull request targeting the default branch is an ordinary row", () => {
-  assert.deepEqual(shape([pullRequest("plain", "plain", "main")]), [["plain@0"]]);
+  assert.deepEqual(shape([pullRequest("plain", "plain", "main")]), [["plain"]]);
 });
 
 test("equally named branches in different repositories are unrelated", () => {
@@ -61,7 +64,7 @@ test("equally named branches in different repositories are unrelated", () => {
     pullRequest("q", "other", "shared", "o/two"),
   ]);
 
-  assert.deepEqual(rows, [["p@0"], ["q@0!"]]);
+  assert.deepEqual(rows, [["p"], ["q!"]]);
 });
 
 test("every pull request is grouped exactly once, including a base/head cycle", () => {
@@ -75,7 +78,7 @@ test("every pull request is grouped exactly once, including a base/head cycle", 
 
   const ids = shape(input)
     .flat()
-    .map((row) => row.split("@")[0]);
+    .map((row) => row.replace(/[<!].*$/, ""));
 
   assert.deepEqual(ids.slice().sort(), ["a", "b", "m", "n", "orphan"]);
 });
