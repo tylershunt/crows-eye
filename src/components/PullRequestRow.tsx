@@ -33,12 +33,12 @@ export function PullRequestRow({ pr, stackedOn = null, detached = false }: PullR
       rel="noreferrer"
       className="group relative flex items-center gap-3 border-b border-ink-100 px-4 py-2.5 transition-colors last:border-b-0 hover:bg-sheen-500/5 dark:border-ink-800/70 dark:hover:bg-sheen-500/10"
     >
-      {!pr.isRead && (
-        <span
-          title="Unread activity"
-          className="absolute inset-y-0 left-0 w-[3px] bg-glint-400 shadow-[0_0_8px_#f5c451aa]"
-        />
-      )}
+      <span
+        title={pr.isRead ? undefined : "Unread activity"}
+        className={`h-2 w-2 shrink-0 rounded-full ${
+          pr.isRead ? "bg-transparent" : "bg-glint-400 shadow-[0_0_6px_#f5c451aa]"
+        }`}
+      />
 
       <StateIcon pr={pr} />
 

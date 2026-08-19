@@ -111,11 +111,10 @@ these, it just returns something you probably did not intend.
 
 ## What each row shows
 
-A gold bar down the left edge marks a pull request with activity you have not
-seen. Left to right, the row then shows the pull request state, the author's
-avatar, the title, and then the repo, number, author, and diff size. Titles too
-long for the window get a tooltip with the full text. On the right: labels,
-comment count, reviewer
+Left to right: a gold dot when the pull request has activity you have not seen,
+the pull request state, the author's avatar, the title, and then the repo,
+number, author, and diff size. Titles too long for the window get a tooltip
+with the full text. On the right: labels, comment count, reviewer
 avatars (green ring means they approved, gray initials means they still owe a
 review), the overall review decision, the CI check rollup, and how long ago the
 pull request was last updated. Clicking a row opens it on GitHub.
@@ -130,7 +129,7 @@ The choice survives a restart.
 ## Stacks
 
 Pull requests stacked on one another are moved next to each other and joined by
-a bar in the section's color. Rows are not indented; instead each one names the
+a bar in the section's color, drawn in the gutter left of the unread dot. Rows are not indented; instead each one names the
 pull request it sits on, as `on #1234`. Hovering that gives the parent's title.
 
 Naming the parent rather than indenting means sibling branches read correctly:
