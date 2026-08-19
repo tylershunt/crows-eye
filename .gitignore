@@ -1,0 +1,19 @@
+# Installed dependencies; package-lock.json is committed so installs are reproducible.
+node_modules/
+
+# Build output and TypeScript incremental state.
+dist/
+*.tsbuildinfo
+
+# Your sections, global filters, and refresh interval. Generated on first run
+# from DEFAULT_CONFIG in server/config.ts, and specific to you.
+data/
+
+# Credentials. Crow's Eye reads the gh CLI token, but GITHUB_TOKEN can override it.
+.env
+.env.*
+
+*.local
+*.log
+npm-debug.log*
+.DS_Store

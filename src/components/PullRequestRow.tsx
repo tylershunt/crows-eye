@@ -1,0 +1,217 @@
+import type { ReactNode } from "react";
+import type { CheckState, PullRequest, ReviewDecision } from "../../shared/types.js";
+import { absoluteTime, readableTextColor, relativeAge } from "../lib/format.js";
+import { useOverflowTitle } from "../lib/useOverflowTitle.js";
+import {
+  CheckCircleIcon,
+  ClockIcon,
+  CommentIcon,
+  DashCircleIcon,
+  DraftIcon,
+  LockIcon,
+  MergeIcon,
+  PullRequestIcon,
+  XCircleIcon,
+} from "./icons.js";
+
+export function PullRequestRow({ pr }: { pr: PullRequest }) {
+  const { ref: titleRef, title: titleTooltip } = useOverflowTitle<HTMLSpanElement>(pr.title);
+
+  return (
+    <a
+      href={pr.url}
+      target="_blank"
+      rel="noreferrer"
+      className="group relative flex items-center gap-3 border-b border-ink-100 px-4 py-2.5 transition-colors last:border-b-0 hover:bg-sheen-500/5 dark:border-ink-800/70 dark:hover:bg-sheen-500/10"
+    >
+      {!pr.isRead && (
+        <span
+          title="Unread activity"
+          className="absolute inset-y-0 left-0 w-[3px] bg-glint-400 shadow-[0_0_8px_#f5c451aa]"
+        />
+      )}
+
+      <StateIcon pr={pr} />
+
+      {pr.author && (
+        <img
+          src={pr.author.avatarUrl}
+          alt={pr.author.login}
+          title={pr.author.login}
+          className="h-6 w-6 shrink-0 rounded-full ring-1 ring-ink-200 dark:ring-ink-700"
+        />
+      )}
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span
+            ref={titleRef}
+            title={titleTooltip}
+            className={`truncate text-sm ${
+              pr.isRead ? "font-medium text-ink-700 dark:text-ink-200" : "font-semibold text-ink-900 dark:text-white"
+            }`}
+          >
+            {pr.title}
+          </span>
+          {pr.isDraft && <Chip className="bg-ink-100 text-ink-500 dark:bg-ink-800 dark:text-ink-400">Draft</Chip>}
+          {pr.mergeable === "CONFLICTING" && (
+            <Chip className="bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300">
+              Conflicts
+            </Chip>
+          )}
+        </div>
+
+        <div className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-ink-500 dark:text-ink-400">
+          {pr.isPrivate && <LockIcon className="h-3 w-3 shrink-0" />}
+          <span className="truncate">{pr.repo}</span>
+          <span className="text-ink-300 dark:text-ink-600">#{pr.number}</span>
+          {pr.author && (
+            <>
+              <Separator />
+              <span className="truncate">{pr.author.login}</span>
+            </>
+          )}
+          <Separator />
+          <span className="tabular-nums text-emerald-600 dark:text-emerald-400">+{pr.additions}</span>
+          <span className="tabular-nums text-rose-600 dark:text-rose-400">-{pr.deletions}</span>
+        </div>
+      </div>
+
+      <div className="hidden shrink-0 items-center gap-1 lg:flex">
+        {pr.labels.slice(0, 3).map((label) => (
+          <span
+            key={label.name}
+            className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+            style={{ backgroundColor: `#${label.color}`, color: readableTextColor(`#${label.color}`) }}
+          >
+            {label.name}
+          </span>
+        ))}
+      </div>
+
+      {pr.commentCount > 0 && (
+        <span className="hidden shrink-0 items-center gap-1 text-xs text-ink-400 sm:flex dark:text-ink-500">
+          <CommentIcon className="h-3.5 w-3.5" />
+          <span className="tabular-nums">{pr.commentCount}</span>
+        </span>
+      )}
+
+      <ReviewerStack pr={pr} />
+
+      <ReviewDecisionChip decision={pr.reviewDecision} />
+
+      <CheckStateIcon state={pr.checkState} />
+
+      <time
+        dateTime={pr.updatedAt}
+        title={`Updated ${absoluteTime(pr.updatedAt)}`}
+        className="w-9 shrink-0 text-right text-xs tabular-nums text-ink-400 dark:text-ink-500"
+      >
+        {relativeAge(pr.updatedAt)}
+      </time>
+    </a>
+  );
+}
+
+function Separator() {
+  return <span className="text-ink-300 dark:text-ink-600">·</span>;
+}
+
+function Chip({ children, className }: { children: ReactNode; className: string }) {
+  return (
+    <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${className}`}>
+      {children}
+    </span>
+  );
+}
+
+function StateIcon({ pr }: { pr: PullRequest }) {
+  const className = "h-4 w-4 shrink-0";
+  if (pr.state === "MERGED") return <MergeIcon className={`${className} text-sheen-400`} />;
+  if (pr.state === "CLOSED") return <XCircleIcon className={`${className} text-rose-500`} />;
+  if (pr.isDraft) return <DraftIcon className={`${className} text-ink-400`} />;
+  return <PullRequestIcon className={`${className} text-emerald-500`} />;
+}
+
+const CHECK_PRESENTATION: Record<CheckState, { Icon: typeof CheckCircleIcon; className: string; label: string }> = {
+  SUCCESS: { Icon: CheckCircleIcon, className: "text-emerald-500", label: "Checks passing" },
+  FAILURE: { Icon: XCircleIcon, className: "text-rose-500", label: "Checks failing" },
+  ERROR: { Icon: XCircleIcon, className: "text-rose-500", label: "Checks errored" },
+  PENDING: { Icon: ClockIcon, className: "text-glint-500", label: "Checks running" },
+  EXPECTED: { Icon: ClockIcon, className: "text-glint-500", label: "Checks expected" },
+  NONE: { Icon: DashCircleIcon, className: "text-ink-300 dark:text-ink-700", label: "No checks" },
+};
+
+function CheckStateIcon({ state }: { state: CheckState }) {
+  const { Icon, className, label } = CHECK_PRESENTATION[state];
+  return (
+    <Icon className={`h-4 w-4 shrink-0 ${className}`} role="img" aria-label={label}>
+      <title>{label}</title>
+    </Icon>
+  );
+}
+
+const REVIEW_PRESENTATION: Record<ReviewDecision, { label: string; className: string } | null> = {
+  APPROVED: {
+    label: "Approved",
+    className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  },
+  CHANGES_REQUESTED: {
+    label: "Changes",
+    className: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+  },
+  REVIEW_REQUIRED: {
+    label: "Review",
+    className: "bg-ink-100 text-ink-500 dark:bg-ink-800 dark:text-ink-400",
+  },
+  NONE: null,
+};
+
+function ReviewDecisionChip({ decision }: { decision: ReviewDecision }) {
+  const presentation = REVIEW_PRESENTATION[decision];
+  if (!presentation) return <span className="hidden w-[68px] shrink-0 md:block" />;
+  return (
+    <span className="hidden w-[68px] shrink-0 md:block">
+      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${presentation.className}`}>
+        {presentation.label}
+      </span>
+    </span>
+  );
+}
+
+function ReviewerStack({ pr }: { pr: PullRequest }) {
+  const approvers = pr.latestReviews.filter((review) => review.state === "APPROVED" && review.author);
+  const pending = pr.requestedReviewers.slice(0, 3);
+  if (approvers.length === 0 && pending.length === 0) return null;
+
+  return (
+    <div className="hidden shrink-0 items-center -space-x-1.5 xl:flex" title={reviewerTooltip(pr)}>
+      {approvers.slice(0, 3).map((review) => (
+        <img
+          key={review.author!.login}
+          src={review.author!.avatarUrl}
+          alt={review.author!.login}
+          className="h-5 w-5 rounded-full ring-2 ring-emerald-400 dark:ring-emerald-500"
+        />
+      ))}
+      {pending.map((login) => (
+        <span
+          key={login}
+          className="flex h-5 w-5 items-center justify-center rounded-full bg-ink-200 text-[9px] font-semibold uppercase text-ink-600 ring-2 ring-ink-100 dark:bg-ink-700 dark:text-ink-300 dark:ring-ink-900"
+        >
+          {login.slice(0, 2)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function reviewerTooltip(pr: PullRequest): string {
+  const approved = pr.latestReviews
+    .filter((review) => review.state === "APPROVED" && review.author)
+    .map((review) => review.author!.login);
+  const parts: string[] = [];
+  if (approved.length) parts.push(`Approved by ${approved.join(", ")}`);
+  if (pr.requestedReviewers.length) parts.push(`Awaiting ${pr.requestedReviewers.join(", ")}`);
+  return parts.join(" · ");
+}
