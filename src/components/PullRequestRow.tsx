@@ -35,8 +35,8 @@ export function PullRequestRow({ pr, stackedOn = null, detached = false }: PullR
     >
       <span
         title={pr.isRead ? undefined : "Unread activity"}
-        className={`h-2 w-2 shrink-0 rounded-full ${
-          pr.isRead ? "bg-transparent" : "bg-glint-400 shadow-[0_0_6px_#f5c451aa]"
+        className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+          pr.isRead ? "" : "bg-ink-950 ring-1 ring-sheen-400 shadow-[0_0_6px_2px_#8b6cf677]"
         }`}
       />
 
