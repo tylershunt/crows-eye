@@ -13,4 +13,5 @@ export const SNOOZED_SECTION: SectionConfig = {
   limit: 0,
   collapsed: true,
   color: "#71718c",
+  countsTowardBadge: false,
 };

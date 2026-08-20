@@ -427,6 +427,7 @@ mod tests {
                 limit: 5,
                 collapsed: false,
                 color: "#000000".into(),
+                counts_toward_badge: false,
             }],
             global_filters: Vec::new(),
             refresh_interval_seconds: 120,

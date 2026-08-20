@@ -60,6 +60,7 @@ pub struct PullRequest {
 
 /// A user-configured group of pull requests, defined by a GitHub search query.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SectionConfig {
     pub id: String,
     pub title: String,
@@ -70,6 +71,15 @@ pub struct SectionConfig {
     pub collapsed: bool,
     /// Hex accent color for the section header dot.
     pub color: String,
+    /// Whether this section's matches are added into the badge on the dock icon.
+    pub counts_toward_badge: bool,
+}
+
+impl SectionConfig {
+    /// The same section, counted on the dock badge.
+    pub fn on_the_badge(self) -> Self {
+        Self { counts_toward_badge: true, ..self }
+    }
 }
 
 /// Search terms ANDed into every section's query, narrowing all sections at once.

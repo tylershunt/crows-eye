@@ -66,9 +66,9 @@ macOS.
 Click **Settings** in the sidebar, or the gear on any section header to jump
 straight to that section. You can rename sections, edit their query, reorder
 them, set a per-section result limit and accent color, and choose whether a
-section starts collapsed. A section whose query currently matches nothing starts
-collapsed on its own, so empty sections stay out of the way until they have
-something in them.
+section starts collapsed and whether it counts on the dock badge. A section
+whose query currently matches nothing starts collapsed on its own, so empty
+sections stay out of the way until they have something in them.
 
 Changes are written to `config.json` in the app's data directory, which Settings
 prints at the top and which you can also edit by hand. It is created on first
@@ -148,6 +148,19 @@ only ever shows the dashboard.
 The flame on a section header opens every pull request in that section as its
 own browser tab, in the order shown. Filter the section down first if you want a
 smaller pile.
+
+## The dock badge
+
+Each section carries an **On the dock badge** switch in Settings, and the badge
+on the app's icon is the total held by the sections that have it on. Out of the
+box that is *Needs your review* and *Changes requested*; with none of them on,
+the icon wears no badge at all.
+
+It counts what GitHub returned rather than what is on screen, so a section
+capped by its limit still contributes every match, and typing in the filter box
+narrows the view without pretending the rest of the pile went away. Snoozed pull
+requests are already out of their sections by the time the badge is added up, so
+they do not count until they wake.
 
 ## Snoozing
 

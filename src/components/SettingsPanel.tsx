@@ -118,6 +118,7 @@ export function SettingsPanel({
           limit: 25,
           collapsed: false,
           color: SWATCHES[current.sections.length % SWATCHES.length] ?? "#9292ad",
+          countsTowardBadge: false,
         },
       ],
     }));
@@ -359,6 +360,18 @@ export function SettingsPanel({
                     onChange={(event) => updateSection(index, { collapsed: event.target.checked })}
                   />
                   Collapsed by default
+                </label>
+
+                <label
+                  className="flex items-center gap-1.5 text-xs text-ink-500 dark:text-ink-400"
+                  title="Adds this section's count to the badge on the dock icon"
+                >
+                  <input
+                    type="checkbox"
+                    checked={section.countsTowardBadge}
+                    onChange={(event) => updateSection(index, { countsTowardBadge: event.target.checked })}
+                  />
+                  On the dock badge
                 </label>
 
                 <div className="flex items-center gap-1">

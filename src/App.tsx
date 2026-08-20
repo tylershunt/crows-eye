@@ -8,6 +8,7 @@ import { retainPullRequests } from "../shared/dashboard.js";
 import { enabledGlobalFilters } from "../shared/query.js";
 import { SNOOZED_SECTION } from "../shared/snoozed.js";
 import { api } from "./lib/api.js";
+import { badgeCount, showOnTheDock } from "./lib/badge.js";
 import { openExternal } from "./lib/external.js";
 import { titleBar } from "./lib/titlebar.js";
 
@@ -101,6 +102,15 @@ export function App() {
   useEffect(() => {
     localStorage.setItem(SIDEBAR_STORAGE_KEY, sidebarCollapsed ? "collapsed" : "expanded");
   }, [sidebarCollapsed]);
+
+  // The badge counts what GitHub returned, so a filter typed into the box narrows
+  // the view without pretending the rest of the pile went away.
+  useEffect(() => {
+    if (!dashboard) return;
+    showOnTheDock(badgeCount(dashboard.sections)).catch((caught: unknown) =>
+      setError(caught instanceof Error ? caught.message : String(caught)),
+    );
+  }, [dashboard]);
 
   const sections = useMemo(
     () => (dashboard?.sections ?? []).map((section) => filterSection(section, filterText)),

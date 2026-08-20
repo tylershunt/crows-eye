@@ -13,8 +13,8 @@ pub fn default_config() -> AppConfig {
         refresh_interval_seconds: 120,
         global_filters: Vec::new(),
         sections: vec![
-            section("needs-your-review", "Needs your review", "is:open is:pr review-requested:@me archived:false", 50, false, "#f5c451"),
-            section("changes-requested", "Changes requested", "is:open is:pr author:@me review:changes-requested archived:false", 50, false, "#e5484d"),
+            section("needs-your-review", "Needs your review", "is:open is:pr review-requested:@me archived:false", 50, false, "#f5c451").on_the_badge(),
+            section("changes-requested", "Changes requested", "is:open is:pr author:@me review:changes-requested archived:false", 50, false, "#e5484d").on_the_badge(),
             section("ready-to-merge", "Ready to merge", "is:open is:pr author:@me review:approved -is:draft archived:false", 50, false, "#3dd68c"),
             section("waiting-on-reviewers", "Waiting on reviewers", "is:open is:pr author:@me -review:approved -review:changes-requested -is:draft archived:false", 50, false, "#4f8cff"),
             section("mentions-you", "Mentions you", "is:open is:pr mentions:@me -author:@me archived:false", 25, false, "#a78bfa"),
@@ -32,6 +32,7 @@ fn section(id: &str, title: &str, query: &str, limit: u32, collapsed: bool, colo
         limit,
         collapsed,
         color: color.into(),
+        counts_toward_badge: false,
     }
 }
 
@@ -155,6 +156,7 @@ fn parse_section(raw: &Value, index: usize) -> Result<SectionConfig> {
         limit: clamp(number(object.get("limit")).unwrap_or(50.0), 1, 100),
         collapsed: object.get("collapsed") == Some(&Value::Bool(true)),
         color: hex_color(object.get("color")),
+        counts_toward_badge: object.get("countsTowardBadge") == Some(&Value::Bool(true)),
     })
 }
 
@@ -237,6 +239,34 @@ mod tests {
         let raw = json!({ "sections": [{ "title": "One", "query": "is:pr", "limit": 500 }] });
 
         assert_eq!(parse_config(&raw).unwrap().sections[0].limit, 100);
+    }
+
+    #[test]
+    fn a_section_is_off_the_badge_unless_it_says_otherwise() {
+        let raw = json!({ "sections": [
+            { "title": "One", "query": "is:pr" },
+            { "title": "Two", "query": "is:pr", "countsTowardBadge": true },
+        ] });
+
+        let parsed = parse_config(&raw).unwrap();
+
+        assert!(!parsed.sections[0].counts_toward_badge);
+        assert!(parsed.sections[1].counts_toward_badge);
+    }
+
+    #[test]
+    fn a_section_kept_on_the_badge_is_still_on_it_when_read_back() {
+        let saved = serde_json::to_value(default_config()).unwrap();
+
+        let parsed = parse_config(&saved).unwrap();
+
+        let badged: Vec<&str> = parsed
+            .sections
+            .iter()
+            .filter(|section| section.counts_toward_badge)
+            .map(|section| section.id.as_str())
+            .collect();
+        assert_eq!(badged, ["needs-your-review", "changes-requested"]);
     }
 
     #[test]

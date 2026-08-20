@@ -84,6 +84,8 @@ export interface SectionConfig {
   collapsed: boolean;
   /** Hex accent color for the section header dot. */
   color: string;
+  /** Whether this section's matches are added into the badge on the dock icon. */
+  countsTowardBadge: boolean;
 }
 
 /**

@@ -20,6 +20,7 @@ pub fn snoozed_section() -> SectionConfig {
         limit: 0,
         collapsed: true,
         color: "#71718c".into(),
+        counts_toward_badge: false,
     }
 }
 
@@ -199,6 +200,7 @@ mod tests {
                 limit: 50,
                 collapsed: false,
                 color: "#000000".into(),
+                counts_toward_badge: false,
             },
             effective_query: String::new(),
             error: None,
