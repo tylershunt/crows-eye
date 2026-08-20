@@ -33,7 +33,7 @@ export function Section({
   const snoozed = config.id === SNOOZED_SECTION.id;
 
   return (
-    <section id={`section-${config.id}`} className="scroll-mt-20">
+    <section id={`section-${config.id}`} className="scroll-mt-24">
       <div className="overflow-hidden rounded-xl border border-ink-200 bg-white shadow-sm dark:border-ink-800 dark:bg-ink-900">
         <header className="group flex items-center gap-2.5 border-b border-ink-200 px-4 py-2.5 dark:border-ink-800">
           <button
