@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to publish, e.g. v1.0.0
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+
+      - run: npm test
+
+      - name: Build the dmg and draft its release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: --target universal-apple-darwin
+          tagName: ${{ inputs.tag || github.ref_name }}
+          releaseName: Crow's Eye ${{ inputs.tag || github.ref_name }}
+          releaseBody: |
+            One universal download for Apple Silicon and Intel Macs.
+
+            Open the `.dmg` and drag Crow's Eye to Applications. The app is
+            ad-hoc signed but not notarized, so the first launch needs
+            **right-click → Open**, or **System Settings → Privacy & Security
+            → Open Anyway**. Every launch after that is an ordinary one.
+
+            Crow's Eye reads the token the [`gh` CLI](https://cli.github.com)
+            already stores, so run `gh auth login` before the first launch if
+            you have not already.
+          releaseDraft: true
+          prerelease: false
+
+      # A bundle whose resources are not sealed is called damaged by Gatekeeper,
+      # with no way past it, and nothing short of asking codesign tells them
+      # apart. The release stays a draft until this passes.
+      - name: Check the bundle is sealed
+        run: |
+          app="src-tauri/target/universal-apple-darwin/release/bundle/macos/Crow's Eye.app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          codesign -dv "$app" 2>&1 | grep "Sealed Resources"
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: gh release edit "$TAG" --draft=false --latest
