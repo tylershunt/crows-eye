@@ -59,6 +59,7 @@ export function SettingsPanel({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const activeQueryRef = useRef<HTMLTextAreaElement | null>(null);
+  const focusedQueryRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -67,6 +68,16 @@ export function SettingsPanel({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  // Arriving from one section's gear means editing that section's query, which
+  // sits far below the fold in a panel that opens at the top. Focusing it also
+  // makes it the target the token palette appends to.
+  useEffect(() => {
+    const query = focusedQueryRef.current;
+    if (!query) return;
+    query.scrollIntoView({ block: "center" });
+    query.focus();
+  }, [focusSectionId]);
 
   const dirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(config), [draft, config]);
 
@@ -304,6 +315,7 @@ export function SettingsPanel({
               <textarea
                 ref={(node) => {
                   if (node && document.activeElement === node) activeQueryRef.current = node;
+                  if (section.id === focusSectionId) focusedQueryRef.current = node;
                 }}
                 data-index={index}
                 value={section.query}

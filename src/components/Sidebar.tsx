@@ -1,6 +1,7 @@
 import type { Actor, SectionResult } from "../../shared/types.js";
 import { Logo } from "./Logo.js";
-import { CrowFootIcon, MoonIcon, SettingsIcon, SidebarIcon, SunIcon } from "./icons.js";
+import { MoonIcon, SettingsIcon, SidebarIcon, SunIcon } from "./icons.js";
+import { SectionMarker } from "./SectionMarker.js";
 
 interface SidebarProps {
   viewer: Actor | null;
@@ -92,7 +93,7 @@ export function Sidebar({
               title={`${config.title} — ${error ? "query failed" : totalCount}`}
               className="flex flex-col items-center gap-1 rounded-lg py-2 transition-colors hover:bg-ink-100 dark:hover:bg-ink-800"
             >
-              <CrowFootIcon className="h-4 w-4" style={{ color: config.color }} />
+              <SectionMarker config={config} className="h-4 w-4 text-sm" />
               <span
                 className={`text-[10px] leading-none tabular-nums ${
                   error ? "text-rose-500" : "text-ink-400 dark:text-ink-500"
@@ -107,7 +108,7 @@ export function Sidebar({
               href={`#section-${config.id}`}
               className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm text-ink-600 transition-colors hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-ink-800"
             >
-              <CrowFootIcon className="h-3.5 w-3.5 shrink-0" style={{ color: config.color }} />
+              <SectionMarker config={config} className="h-3.5 w-3.5 shrink-0 text-xs" />
               <span className="truncate">{config.title}</span>
               <span
                 className={`ml-auto shrink-0 text-xs tabular-nums ${

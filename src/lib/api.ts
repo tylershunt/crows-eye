@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import type { AppConfig, DashboardResponse } from "../../shared/types.js";
 
 export interface ConfigResponse {
@@ -5,31 +6,22 @@ export interface ConfigResponse {
   path: string;
 }
 
-/** Raised when the sidecar server reports a failure; `message` is safe to show to the user. */
+/** Raised when the app's backend reports a failure; `message` is safe to show to the user. */
 export class ApiError extends Error {}
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  let response: Response;
+async function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   try {
-    response = await fetch(path, {
-      ...init,
-      headers: { "Content-Type": "application/json", ...init?.headers },
-    });
-  } catch {
-    throw new ApiError("Cannot reach the Crow's Eye server. Is `npm run dev` still running?");
+    return await invoke<T>(command, args);
+  } catch (rejection) {
+    throw new ApiError(typeof rejection === "string" ? rejection : String(rejection));
   }
-
-  const body = (await response.json().catch(() => null)) as { error?: string } | null;
-  if (!response.ok) {
-    throw new ApiError(body?.error ?? `Request failed with status ${response.status}.`);
-  }
-  return body as T;
 }
 
 export const api = {
-  dashboard: () => request<DashboardResponse>("/api/dashboard"),
-  config: () => request<ConfigResponse>("/api/config"),
-  saveConfig: (config: AppConfig) =>
-    request<ConfigResponse>("/api/config", { method: "PUT", body: JSON.stringify(config) }),
-  resetConfig: () => request<ConfigResponse>("/api/config/reset", { method: "POST" }),
+  dashboard: () => call<DashboardResponse>("get_dashboard"),
+  config: () => call<ConfigResponse>("get_config"),
+  saveConfig: (config: AppConfig) => call<ConfigResponse>("save_config", { config }),
+  resetConfig: () => call<ConfigResponse>("reset_config"),
+  snooze: (pullRequestId: string) => call<void>("snooze", { pullRequestId }),
+  wake: (pullRequestId: string) => call<void>("wake", { pullRequestId }),
 };

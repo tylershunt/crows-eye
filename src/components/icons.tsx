@@ -178,6 +178,13 @@ export const FeatherIcon = (p: IconProps) => (
   </Icon>
 );
 
+export const FlameIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 2.5c.4 3.2 2.1 4.7 3.5 6.3A6.5 6.5 0 1 1 6.3 12c0-2 .8-3.4 1.9-4.6.2 1.5.9 2.4 1.8 2.8C11 8.3 11 5.4 12 2.5Z" />
+    <path d="M12 20.5a3 3 0 0 0 3-3c0-1.5-1.2-2.5-3-4.6-1.8 2.1-3 3.1-3 4.6a3 3 0 0 0 3 3Z" />
+  </Icon>
+);
+
 export const AlertIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M12 4 2.5 20h19L12 4Z" />

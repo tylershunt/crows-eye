@@ -5,8 +5,8 @@ node_modules/
 dist/
 *.tsbuildinfo
 
-# Your sections, global filters, and refresh interval. Generated on first run
-# from DEFAULT_CONFIG in server/config.ts, and specific to you.
+# Your sections, global filters, and refresh interval, from before the app kept
+# them in its own application support directory.
 data/
 
 # Credentials. Crow's Eye reads the gh CLI token, but GITHUB_TOKEN can override it.

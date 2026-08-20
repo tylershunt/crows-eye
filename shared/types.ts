@@ -1,4 +1,7 @@
-/** Types shared by the browser bundle and the local sidecar server. */
+/**
+ * The contract between the interface and the Rust core, mirrored there in
+ * `src-tauri/src/types.rs`.
+ */
 
 /** Aggregate state of the commit status checks on a pull request's head commit. */
 export type CheckState = "SUCCESS" | "FAILURE" | "ERROR" | "PENDING" | "EXPECTED" | "NONE";
@@ -110,11 +113,15 @@ export interface SectionResult {
   /** Total matches on GitHub, which may exceed `pullRequests.length` when capped by `limit`. */
   totalCount: number;
   error: string | null;
+  /**
+   * For a section assembled out of the others, the section each pull request
+   * would sit in if this one were not holding it, keyed by pull request id.
+   */
+  homeSections?: Record<string, SectionConfig>;
 }
 
 export interface DashboardResponse {
   viewer: Actor;
   sections: SectionResult[];
-  fetchedAt: string;
   rateLimitRemaining: number;
 }

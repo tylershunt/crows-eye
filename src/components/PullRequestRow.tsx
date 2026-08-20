@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import type { CheckState, PullRequest, ReviewDecision } from "../../shared/types.js";
+import type { CheckState, PullRequest, ReviewDecision, SectionConfig } from "../../shared/types.js";
 import { absoluteTime, readableTextColor, relativeAge } from "../lib/format.js";
 import { useOverflowTitle } from "../lib/useOverflowTitle.js";
+import { SectionMarker } from "./SectionMarker.js";
 import {
   CheckCircleIcon,
   ClockIcon,
@@ -17,121 +18,153 @@ import {
 
 interface PullRequestRowProps {
   pr: PullRequest;
+  /** Whether this row is listed as snoozed, where its control wakes instead. */
+  snoozed: boolean;
+  onToggleSnooze: (pullRequest: PullRequest, snoozed: boolean) => void;
+  /** The section this row would sit in, shown in place of the unread marker when set. */
+  homeSection?: SectionConfig;
   /** The pull request this one is stacked on, when it is shown in the same section. */
   stackedOn?: PullRequest | null;
   /** Marks a pull request stacked on a branch whose pull request is not shown here. */
   detached?: boolean;
 }
 
-export function PullRequestRow({ pr, stackedOn = null, detached = false }: PullRequestRowProps) {
+export function PullRequestRow({
+  pr,
+  snoozed,
+  onToggleSnooze,
+  homeSection,
+  stackedOn = null,
+  detached = false,
+}: PullRequestRowProps) {
   const { ref: titleRef, title: titleTooltip } = useOverflowTitle<HTMLSpanElement>(pr.title);
 
   return (
-    <a
-      href={pr.url}
-      target="_blank"
-      rel="noreferrer"
-      className="group relative flex items-center gap-3 border-b border-ink-100 px-4 py-2.5 transition-colors last:border-b-0 hover:bg-sheen-500/5 dark:border-ink-800/70 dark:hover:bg-sheen-500/10"
-    >
-      <span
-        title={pr.isRead ? undefined : "Unread activity"}
-        className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-          pr.isRead ? "" : "bg-ink-950 ring-1 ring-sheen-400 shadow-[0_0_6px_2px_#8b6cf677]"
-        }`}
-      />
-
-      <StateIcon pr={pr} />
-
-      {pr.author && (
-        <img
-          src={pr.author.avatarUrl}
-          alt={pr.author.login}
-          title={pr.author.login}
-          className="h-6 w-6 shrink-0 rounded-full ring-1 ring-ink-200 dark:ring-ink-700"
-        />
-      )}
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span
-            ref={titleRef}
-            title={titleTooltip}
-            className={`truncate text-sm ${
-              pr.isRead ? "font-medium text-ink-700 dark:text-ink-200" : "font-semibold text-ink-900 dark:text-white"
-            }`}
-          >
-            {pr.title}
-          </span>
-          {pr.isDraft && <Chip className="bg-ink-100 text-ink-500 dark:bg-ink-800 dark:text-ink-400">Draft</Chip>}
-          {pr.mergeable === "CONFLICTING" && (
-            <Chip className="bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300">
-              Conflicts
-            </Chip>
-          )}
-        </div>
-
-        <div className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-ink-500 dark:text-ink-400">
-          {(stackedOn || detached) && (
-            <span
-              title={
-                stackedOn
-                  ? `Stacked on #${stackedOn.number} — ${stackedOn.title}`
-                  : `Stacked on ${pr.baseRef}`
-              }
-              className="flex shrink-0 items-center gap-1 text-sheen-600 dark:text-sheen-400"
-            >
-              <StackIcon className="h-3 w-3" />
-              {stackedOn && <span className="tabular-nums">on #{stackedOn.number}</span>}
-            </span>
-          )}
-          {pr.isPrivate && <LockIcon className="h-3 w-3 shrink-0" />}
-          <span className="truncate">{pr.repo}</span>
-          <span className="text-ink-300 dark:text-ink-600">#{pr.number}</span>
-          {pr.author && (
-            <>
-              <Separator />
-              <span className="truncate">{pr.author.login}</span>
-            </>
-          )}
-          <Separator />
-          <span className="tabular-nums text-emerald-600 dark:text-emerald-400">+{pr.additions}</span>
-          <span className="tabular-nums text-rose-600 dark:text-rose-400">-{pr.deletions}</span>
-        </div>
-      </div>
-
-      <div className="hidden shrink-0 items-center gap-1 lg:flex">
-        {pr.labels.slice(0, 3).map((label) => (
-          <span
-            key={label.name}
-            className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-            style={{ backgroundColor: `#${label.color}`, color: readableTextColor(`#${label.color}`) }}
-          >
-            {label.name}
-          </span>
-        ))}
-      </div>
-
-      {pr.commentCount > 0 && (
-        <span className="hidden shrink-0 items-center gap-1 text-xs text-ink-400 sm:flex dark:text-ink-500">
-          <CommentIcon className="h-3.5 w-3.5" />
-          <span className="tabular-nums">{pr.commentCount}</span>
-        </span>
-      )}
-
-      <ReviewerStack pr={pr} />
-
-      <ReviewDecisionChip decision={pr.reviewDecision} />
-
-      <CheckStateIcon state={pr.checkState} />
-
-      <time
-        dateTime={pr.updatedAt}
-        title={`Updated ${absoluteTime(pr.updatedAt)}`}
-        className="w-9 shrink-0 text-right text-xs tabular-nums text-ink-400 dark:text-ink-500"
+    <div className="group relative flex items-center border-b border-ink-100 transition-colors last:border-b-0 hover:bg-sheen-500/5 dark:border-ink-800/70 dark:hover:bg-sheen-500/10">
+      <a
+        href={pr.url}
+        target="_blank"
+        rel="noreferrer"
+        className="flex min-w-0 flex-1 items-center gap-3 py-2.5 pl-4"
       >
-        {relativeAge(pr.updatedAt)}
-      </time>
-    </a>
+        {homeSection ? (
+          <span title={`Waiting in ${homeSection.title}`} className="flex shrink-0">
+            <SectionMarker config={homeSection} glow className="h-3 w-3" />
+          </span>
+        ) : (
+          <span
+            title={pr.isRead ? undefined : "Unread activity"}
+            className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+              pr.isRead ? "" : "bg-ink-950 ring-1 ring-sheen-400 shadow-[0_0_6px_2px_#8b6cf677]"
+            }`}
+          />
+        )}
+
+        <StateIcon pr={pr} />
+
+        {pr.author && (
+          <img
+            src={pr.author.avatarUrl}
+            alt={pr.author.login}
+            title={pr.author.login}
+            className="h-6 w-6 shrink-0 rounded-full ring-1 ring-ink-200 dark:ring-ink-700"
+          />
+        )}
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span
+              ref={titleRef}
+              title={titleTooltip}
+              className={`truncate text-sm ${
+                pr.isRead ? "font-medium text-ink-700 dark:text-ink-200" : "font-semibold text-ink-900 dark:text-white"
+              }`}
+            >
+              {pr.title}
+            </span>
+            {pr.isDraft && <Chip className="bg-ink-100 text-ink-500 dark:bg-ink-800 dark:text-ink-400">Draft</Chip>}
+            {pr.mergeable === "CONFLICTING" && (
+              <Chip className="bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300">
+                Conflicts
+              </Chip>
+            )}
+          </div>
+
+          <div className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-ink-500 dark:text-ink-400">
+            {(stackedOn || detached) && (
+              <span
+                title={
+                  stackedOn
+                    ? `Stacked on #${stackedOn.number} — ${stackedOn.title}`
+                    : `Stacked on ${pr.baseRef}`
+                }
+                className="flex shrink-0 items-center gap-1 text-sheen-600 dark:text-sheen-400"
+              >
+                <StackIcon className="h-3 w-3" />
+                {stackedOn && <span className="tabular-nums">on #{stackedOn.number}</span>}
+              </span>
+            )}
+            {pr.isPrivate && <LockIcon className="h-3 w-3 shrink-0" />}
+            <span className="truncate">{pr.repo}</span>
+            <span className="text-ink-300 dark:text-ink-600">#{pr.number}</span>
+            {pr.author && (
+              <>
+                <Separator />
+                <span className="truncate">{pr.author.login}</span>
+              </>
+            )}
+            <Separator />
+            <span className="tabular-nums text-emerald-600 dark:text-emerald-400">+{pr.additions}</span>
+            <span className="tabular-nums text-rose-600 dark:text-rose-400">-{pr.deletions}</span>
+          </div>
+        </div>
+
+        <div className="hidden shrink-0 items-center gap-1 lg:flex">
+          {pr.labels.slice(0, 3).map((label) => (
+            <span
+              key={label.name}
+              className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+              style={{ backgroundColor: `#${label.color}`, color: readableTextColor(`#${label.color}`) }}
+            >
+              {label.name}
+            </span>
+          ))}
+        </div>
+
+        {pr.commentCount > 0 && (
+          <span className="hidden shrink-0 items-center gap-1 text-xs text-ink-400 sm:flex dark:text-ink-500">
+            <CommentIcon className="h-3.5 w-3.5" />
+            <span className="tabular-nums">{pr.commentCount}</span>
+          </span>
+        )}
+
+        <ReviewerStack pr={pr} />
+
+        <ReviewDecisionChip decision={pr.reviewDecision} />
+
+        <CheckStateIcon state={pr.checkState} />
+
+        <time
+          dateTime={pr.updatedAt}
+          title={`Updated ${absoluteTime(pr.updatedAt)}`}
+          className="w-9 shrink-0 text-right text-xs tabular-nums text-ink-400 dark:text-ink-500"
+        >
+          {relativeAge(pr.updatedAt)}
+        </time>
+      </a>
+
+      <button
+        type="button"
+        onClick={() => onToggleSnooze(pr, snoozed)}
+        title={snoozed ? "Wake now" : "Snooze until this pull request is updated"}
+        aria-label={`${snoozed ? "Wake" : "Snooze"} ${pr.title}`}
+        className={`m-1.5 shrink-0 cursor-pointer rounded-md px-2 py-1.5 text-sm leading-none transition hover:bg-sheen-500/15 hover:grayscale-0 focus:opacity-100 group-hover:opacity-100 ${
+          snoozed ? "opacity-100" : "opacity-0 grayscale"
+        }`}
+      >
+        {snoozed ? <>&#9200;</> : <>&#128564;</>}
+      </button>
+    </div>
   );
 }
 

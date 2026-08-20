@@ -13,15 +13,6 @@ export function relativeAge(iso: string, now: number = Date.now()): string {
   return `${Math.floor(elapsed / (365 * DAY))}y`;
 }
 
-/**
- * Renders an age as a standalone phrase: `12m ago`, `3d ago`, or plain `now`
- * for anything under a minute.
- */
-export function relativeAgePhrase(iso: string, now: number = Date.now()): string {
-  const age = relativeAge(iso, now);
-  return age === "now" ? age : `${age} ago`;
-}
-
 export function absoluteTime(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
     dateStyle: "medium",

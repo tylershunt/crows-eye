@@ -1,20 +1,36 @@
-import type { SectionResult } from "../../shared/types.js";
-import { AlertIcon, ChevronDownIcon, CrowFootIcon, FeatherIcon, SettingsIcon } from "./icons.js";
+import type { PullRequest, SectionResult } from "../../shared/types.js";
+import { SNOOZED_SECTION } from "../../shared/snoozed.js";
+import { AlertIcon, ChevronDownIcon, FeatherIcon, FlameIcon, SettingsIcon, StackIcon } from "./icons.js";
 import { groupIntoStacks } from "../lib/stacks.js";
 import { PullRequestRow } from "./PullRequestRow.js";
+import { SectionMarker } from "./SectionMarker.js";
 
 interface SectionProps {
   section: SectionResult;
   collapsed: boolean;
   onToggle: () => void;
   onEdit: () => void;
+  /** Receives the section's pull requests in the order shown here. */
+  onBurnDown: (pullRequests: PullRequest[]) => void;
+  onToggleSnooze: (pullRequest: PullRequest, snoozed: boolean) => void;
   /** Draws skeleton rows while a fetch is in flight and no results are cached yet. */
   loading: boolean;
 }
 
-export function Section({ section, collapsed, onToggle, onEdit, loading }: SectionProps) {
+export function Section({
+  section,
+  collapsed,
+  onToggle,
+  onEdit,
+  onBurnDown,
+  onToggleSnooze,
+  loading,
+}: SectionProps) {
   const { config, pullRequests, totalCount, error } = section;
   const hiddenCount = totalCount - pullRequests.length;
+  const groups = groupIntoStacks(pullRequests);
+  const ordered = groups.flatMap((group) => group.rows.map((row) => row.pullRequest));
+  const snoozed = config.id === SNOOZED_SECTION.id;
 
   return (
     <section id={`section-${config.id}`} className="scroll-mt-20">
@@ -29,23 +45,32 @@ export function Section({ section, collapsed, onToggle, onEdit, loading }: Secti
             <ChevronDownIcon
               className={`h-4 w-4 shrink-0 text-ink-400 transition-transform ${collapsed ? "-rotate-90" : ""}`}
             />
-            <CrowFootIcon
-              className="h-4 w-4 shrink-0"
-              style={{ color: config.color, filter: `drop-shadow(0 0 3px ${config.color}66)` }}
-            />
+            <SectionMarker config={config} glow className="h-4 w-4 shrink-0 text-sm" />
             <h2 className="truncate text-sm font-semibold text-ink-900 dark:text-ink-100">{config.title}</h2>
             <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs font-medium tabular-nums text-ink-600 dark:bg-ink-800 dark:text-ink-300">
               {totalCount}
             </span>
           </button>
 
+          {!snoozed && (
+            <button
+              type="button"
+              onClick={onEdit}
+              title="Edit this section's filter"
+              className="rounded-md p-1.5 text-ink-400 opacity-0 transition hover:bg-ink-100 hover:text-ink-700 focus:opacity-100 group-hover:opacity-100 dark:hover:bg-ink-800 dark:hover:text-ink-200"
+            >
+              <SettingsIcon className="h-4 w-4" />
+            </button>
+          )}
+
           <button
             type="button"
-            onClick={onEdit}
-            title="Edit this section's filter"
-            className="rounded-md p-1.5 text-ink-400 opacity-0 transition hover:bg-ink-100 hover:text-ink-700 focus:opacity-100 group-hover:opacity-100 dark:hover:bg-ink-800 dark:hover:text-ink-200"
+            onClick={() => onBurnDown(ordered)}
+            disabled={ordered.length === 0}
+            title={`Burn down: open all ${ordered.length} in new tabs`}
+            className="rounded-md p-1.5 text-ink-400 transition hover:bg-orange-500/10 hover:text-orange-500 disabled:pointer-events-none disabled:opacity-30"
           >
-            <SettingsIcon className="h-4 w-4" />
+            <FlameIcon className="h-4 w-4" />
           </button>
         </header>
 
@@ -68,24 +93,38 @@ export function Section({ section, collapsed, onToggle, onEdit, loading }: Secti
               </div>
             ) : (
               <>
-                {groupIntoStacks(pullRequests).map((group) =>
+                {groups.map((group) =>
                   group.rows.length === 1 ? (
                     <PullRequestRow
                       key={group.id}
                       pr={group.rows[0]!.pullRequest}
+                      snoozed={snoozed}
+                      onToggleSnooze={onToggleSnooze}
+                      homeSection={section.homeSections?.[group.rows[0]!.pullRequest.id]}
                       detached={group.rows[0]!.detached}
                     />
                   ) : (
                     <div key={group.id} className="relative">
                       <span
+                        role="img"
+                        aria-label={`Stack of ${group.rows.length} pull requests`}
+                        className="pointer-events-none absolute left-[4px] top-px z-10"
+                        style={{ color: config.color, opacity: 0.8 }}
+                      >
+                        <StackIcon className="h-3 w-3" />
+                      </span>
+                      <span
                         aria-hidden
-                        className="pointer-events-none absolute bottom-2.5 left-[7px] top-2.5 w-0.5 rounded-full"
-                        style={{ backgroundColor: config.color, opacity: 0.55 }}
+                        className="pointer-events-none absolute bottom-2.5 left-[9px] top-[14px] z-10 w-2 border-y-2 border-l-2"
+                        style={{ borderColor: config.color, opacity: 0.55 }}
                       />
                       {group.rows.map((row) => (
                         <PullRequestRow
                           key={row.pullRequest.id}
                           pr={row.pullRequest}
+                          snoozed={snoozed}
+                          onToggleSnooze={onToggleSnooze}
+                          homeSection={section.homeSections?.[row.pullRequest.id]}
                           stackedOn={row.parent}
                         />
                       ))}

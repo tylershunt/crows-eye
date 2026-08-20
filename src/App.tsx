@@ -4,9 +4,11 @@ import { Section } from "./components/Section.js";
 import { SettingsPanel } from "./components/SettingsPanel.js";
 import { Sidebar } from "./components/Sidebar.js";
 import { AlertIcon, FilterIcon, RefreshIcon, SearchIcon } from "./components/icons.js";
+import { retainPullRequests } from "../shared/dashboard.js";
 import { enabledGlobalFilters } from "../shared/query.js";
+import { SNOOZED_SECTION } from "../shared/snoozed.js";
 import { api } from "./lib/api.js";
-import { relativeAgePhrase } from "./lib/format.js";
+import { openExternal } from "./lib/external.js";
 
 type Theme = "light" | "dark";
 
@@ -122,6 +124,35 @@ export function App() {
     [refresh],
   );
 
+  const burnDown = useCallback(async (pullRequests: PullRequest[]) => {
+    try {
+      // Opened one at a time so the browser's tabs land in the order shown here.
+      for (const pullRequest of pullRequests) await openExternal(pullRequest.url);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : String(caught));
+    }
+  }, []);
+
+  const toggleSnooze = useCallback(
+    async (pullRequest: PullRequest, snoozed: boolean) => {
+      setDashboard((current) =>
+        current
+          ? snoozed
+            ? retainPullRequests(current, (pr) => pr.id !== pullRequest.id)
+            : intoSnoozedSection(current, pullRequest)
+          : current,
+      );
+      try {
+        await (snoozed ? api.wake(pullRequest.id) : api.snooze(pullRequest.id));
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : String(caught));
+      }
+      // Only a fetch can tell which sections a woken pull request belongs back in.
+      if (snoozed) await refresh();
+    },
+    [refresh],
+  );
+
   const resetConfig = useCallback(async () => {
     const { config: saved, path } = await api.resetConfig();
     setConfig(saved);
@@ -178,12 +209,6 @@ export function App() {
               </button>
             )}
 
-            {dashboard && (
-              <span className="hidden text-xs text-ink-400 sm:block dark:text-ink-500">
-                Updated {relativeAgePhrase(dashboard.fetchedAt)}
-              </span>
-            )}
-
             <button
               type="button"
               onClick={() => void refresh()}
@@ -220,6 +245,8 @@ export function App() {
                       setSettingsFocus(section.config.id);
                       setSettingsOpen(true);
                     }}
+                    onBurnDown={burnDown}
+                    onToggleSnooze={toggleSnooze}
                   />
                 );
               })}
@@ -249,6 +276,32 @@ export function App() {
       )}
     </div>
   );
+}
+
+/**
+ * Mirrors, until the next fetch, where the backend will place a newly snoozed
+ * pull request: held in the snoozed section, remembering the first section that
+ * was showing it.
+ */
+function intoSnoozedSection(dashboard: DashboardResponse, pullRequest: PullRequest): DashboardResponse {
+  const home = dashboard.sections.find((section) =>
+    section.pullRequests.some((pr) => pr.id === pullRequest.id),
+  )?.config;
+  const elsewhere = retainPullRequests(dashboard, (pr) => pr.id !== pullRequest.id);
+
+  return {
+    ...elsewhere,
+    sections: elsewhere.sections.map((section) =>
+      section.config.id === SNOOZED_SECTION.id
+        ? {
+            ...section,
+            pullRequests: [pullRequest, ...section.pullRequests],
+            totalCount: section.totalCount + 1,
+            homeSections: { ...section.homeSections, ...(home ? { [pullRequest.id]: home } : {}) },
+          }
+        : section,
+    ),
+  };
 }
 
 /**
