@@ -15,6 +15,20 @@ interface SidebarProps {
   rateLimitRemaining: number | null;
 }
 
+/** How long the sidebar takes to change width, which every part of it moves in. */
+const GLIDE = "transition-all duration-200 ease-out";
+
+/**
+ * Text that slides out from beside its icon as the sidebar narrows.
+ *
+ * Widening a label from nothing keeps the icon and the count it sits between in
+ * one place for the whole width change, where swapping a rail's markup for a
+ * sidebar's would land them somewhere new the instant it began.
+ */
+function slidingLabel(collapsed: boolean, expandedWidth: string): string {
+  return `truncate ${GLIDE} ${collapsed ? "ml-0 max-w-0 opacity-0" : `ml-2.5 ${expandedWidth} opacity-100`}`;
+}
+
 export function Sidebar({
   viewer,
   sections,
@@ -26,158 +40,119 @@ export function Sidebar({
   rateLimitRemaining,
 }: SidebarProps) {
   const iconButton =
-    "rounded-lg p-1.5 text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-800 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-ink-100";
-
-  const collapseToggle = (
-    <button
-      type="button"
-      onClick={onToggleCollapsed}
-      aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-      aria-expanded={!collapsed}
-      title={`${collapsed ? "Expand" : "Collapse"} sidebar (b)`}
-      className={iconButton}
-    >
-      <SidebarIcon className="h-4 w-4" />
-    </button>
-  );
-
-  const themeToggle = (
-    <button
-      type="button"
-      onClick={onToggleTheme}
-      title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-      className={iconButton}
-    >
-      {theme === "dark" ? <SunIcon className="h-3.5 w-3.5" /> : <MoonIcon className="h-3.5 w-3.5" />}
-    </button>
-  );
+    "shrink-0 rounded-lg p-1.5 text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-800 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-ink-100";
 
   return (
     <aside
-      className={`flex shrink-0 flex-col border-r border-ink-200 bg-white transition-[width] duration-200 dark:border-ink-800 dark:bg-ink-900 ${
-        collapsed ? "w-14" : "w-60"
+      className={`flex shrink-0 flex-col overflow-hidden border-r border-ink-200 bg-white dark:border-ink-800 dark:bg-ink-900 ${GLIDE} ${
+        collapsed ? "w-20" : "w-60"
       }`}
     >
-      {collapsed ? (
-        <div className="flex flex-col items-center gap-2 px-2 pb-3 pt-4">
-          <Logo className="h-8 w-8" />
-          {collapseToggle}
-        </div>
-      ) : (
-        <div className="px-4 pb-3 pt-4">
-          <div className="flex items-center gap-2.5">
-            <Logo className="h-8 w-8 shrink-0" />
-            <p className="wordmark-sheen bg-clip-text font-script text-2xl leading-tight text-transparent">
-              Crow&rsquo;s Eye
-            </p>
-            <div className="ml-auto">{collapseToggle}</div>
-          </div>
-          <p className="mt-1 text-[10px] uppercase tracking-wider text-ink-400 dark:text-ink-500">
-            See your PR truth
+      <div className={`pb-3 pt-4 ${GLIDE} ${collapsed ? "px-2" : "px-4"}`}>
+        <div className="flex items-center">
+          <Logo className="h-8 w-8 shrink-0" />
+          <p
+            className={`wordmark-sheen bg-clip-text font-script text-2xl leading-tight text-transparent ${slidingLabel(
+              collapsed,
+              "max-w-40",
+            )}`}
+          >
+            Crow&rsquo;s Eye
           </p>
+          <button
+            type="button"
+            onClick={onToggleCollapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!collapsed}
+            title={`${collapsed ? "Expand" : "Collapse"} sidebar (b)`}
+            className={`ml-auto ${iconButton}`}
+          >
+            <SidebarIcon className="h-4 w-4" />
+          </button>
         </div>
-      )}
+        <p
+          className={`overflow-hidden whitespace-nowrap text-[10px] uppercase tracking-wider text-ink-400 dark:text-ink-500 ${GLIDE} ${
+            collapsed ? "mt-0 max-h-0 opacity-0" : "mt-1 max-h-4 opacity-100"
+          }`}
+        >
+          See your PR truth
+        </p>
+      </div>
 
-      <nav className={`flex-1 overflow-y-auto pt-3 ${collapsed ? "px-1.5" : "px-2"}`}>
-        {!collapsed && (
-          <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-ink-400 dark:text-ink-500">
-            Sections
-          </p>
-        )}
+      <nav className="flex-1 overflow-y-auto px-2 pt-3">
+        <p
+          className={`px-2 text-[11px] font-semibold uppercase tracking-wider text-ink-400 dark:text-ink-500 ${GLIDE} ${
+            collapsed ? "max-h-0 opacity-0" : "max-h-4 pb-1 opacity-100"
+          }`}
+        >
+          Sections
+        </p>
 
-        {sections.map(({ config, totalCount, error }) =>
-          collapsed ? (
-            <a
-              key={config.id}
-              href={`#section-${config.id}`}
-              title={`${config.title} — ${error ? "query failed" : totalCount}`}
-              className="flex flex-col items-center gap-1 rounded-lg py-2 transition-colors hover:bg-ink-100 dark:hover:bg-ink-800"
+        {sections.map(({ config, totalCount, error }) => (
+          <a
+            key={config.id}
+            href={`#section-${config.id}`}
+            title={collapsed ? `${config.title} — ${error ? "query failed" : totalCount}` : undefined}
+            className="flex items-center rounded-lg px-2 py-1.5 text-sm text-ink-600 transition-colors hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-ink-800"
+          >
+            <SectionMarker config={config} className="h-4 w-4 shrink-0 text-sm" />
+            <span className={slidingLabel(collapsed, "max-w-36")}>{config.title}</span>
+            <span
+              className={`ml-auto shrink-0 pl-2 text-xs tabular-nums ${
+                error ? "text-rose-500" : "text-ink-400 dark:text-ink-500"
+              }`}
             >
-              <SectionMarker config={config} className="h-4 w-4 text-sm" />
-              <span
-                className={`text-[10px] leading-none tabular-nums ${
-                  error ? "text-rose-500" : "text-ink-400 dark:text-ink-500"
-                }`}
-              >
-                {error ? "!" : totalCount}
-              </span>
-            </a>
-          ) : (
-            <a
-              key={config.id}
-              href={`#section-${config.id}`}
-              className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm text-ink-600 transition-colors hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-ink-800"
-            >
-              <SectionMarker config={config} className="h-3.5 w-3.5 shrink-0 text-xs" />
-              <span className="truncate">{config.title}</span>
-              <span
-                className={`ml-auto shrink-0 text-xs tabular-nums ${
-                  error ? "text-rose-500" : "text-ink-400 dark:text-ink-500"
-                }`}
-              >
-                {error ? "!" : totalCount}
-              </span>
-            </a>
-          ),
-        )}
+              {error ? "!" : totalCount}
+            </span>
+          </a>
+        ))}
       </nav>
 
-      {collapsed ? (
-        <div className="flex flex-col items-center gap-1 border-t border-ink-200 p-2 dark:border-ink-800">
-          {viewer && (
-            <a
-              href={viewer.url}
-              target="_blank"
-              rel="noreferrer"
-              title={
-                rateLimitRemaining === null
-                  ? viewer.login
-                  : `${viewer.login} — ${rateLimitRemaining.toLocaleString()} API points left`
-              }
-              className="rounded-full transition-opacity hover:opacity-80"
-            >
-              <img src={viewer.avatarUrl} alt="" className="h-7 w-7 rounded-full ring-1 ring-sheen-400/40" />
-            </a>
-          )}
-          <button type="button" onClick={onOpenSettings} title="Settings" className={iconButton}>
-            <SettingsIcon className="h-3.5 w-3.5" />
-          </button>
-          {themeToggle}
-        </div>
-      ) : (
-        <div className="border-t border-ink-200 p-2 dark:border-ink-800">
-          {viewer && (
-            <a
-              href={viewer.url}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-ink-100 dark:hover:bg-ink-800"
-            >
-              <img src={viewer.avatarUrl} alt="" className="h-7 w-7 rounded-full ring-1 ring-sheen-400/40" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-ink-800 dark:text-ink-100">{viewer.login}</p>
-                {rateLimitRemaining !== null && (
-                  <p className="truncate text-[11px] text-ink-400 dark:text-ink-500">
-                    {rateLimitRemaining.toLocaleString()} API points left
-                  </p>
-                )}
-              </div>
-            </a>
-          )}
+      <div className="border-t border-ink-200 p-2 dark:border-ink-800">
+        {viewer && (
+          <a
+            href={viewer.url}
+            target="_blank"
+            rel="noreferrer"
+            title={
+              collapsed && rateLimitRemaining !== null
+                ? `${viewer.login} — ${rateLimitRemaining.toLocaleString()} API points left`
+                : undefined
+            }
+            className="flex items-center rounded-lg px-2 py-2 transition-colors hover:bg-ink-100 dark:hover:bg-ink-800"
+          >
+            <img src={viewer.avatarUrl} alt="" className="h-7 w-7 shrink-0 rounded-full ring-1 ring-sheen-400/40" />
+            <div className={slidingLabel(collapsed, "max-w-36")}>
+              <p className="truncate text-sm font-medium text-ink-800 dark:text-ink-100">{viewer.login}</p>
+              {rateLimitRemaining !== null && (
+                <p className="truncate text-[11px] text-ink-400 dark:text-ink-500">
+                  {rateLimitRemaining.toLocaleString()} API points left
+                </p>
+              )}
+            </div>
+          </a>
+        )}
 
-          <div className="mt-1 flex gap-1">
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              className="flex flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-800 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-ink-100"
-            >
-              <SettingsIcon className="h-3.5 w-3.5" />
-              Settings
-            </button>
-            {themeToggle}
-          </div>
+        <div className="mt-1 flex gap-1">
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            title={collapsed ? "Settings" : undefined}
+            className="flex min-w-0 flex-1 items-center rounded-lg px-2 py-1.5 text-xs text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-800 dark:text-ink-400 dark:hover:bg-ink-800 dark:hover:text-ink-100"
+          >
+            <SettingsIcon className="h-3.5 w-3.5 shrink-0" />
+            <span className={slidingLabel(collapsed, "max-w-24")}>Settings</span>
+          </button>
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            className={iconButton}
+          >
+            {theme === "dark" ? <SunIcon className="h-3.5 w-3.5" /> : <MoonIcon className="h-3.5 w-3.5" />}
+          </button>
         </div>
-      )}
+      </div>
     </aside>
   );
 }
