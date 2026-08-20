@@ -1,4 +1,5 @@
 import type { Actor, SectionResult } from "../../shared/types.js";
+import { titleBar } from "../lib/titlebar.js";
 import { Logo } from "./Logo.js";
 import { MoonIcon, SettingsIcon, SidebarIcon, SunIcon } from "./icons.js";
 import { SectionMarker } from "./SectionMarker.js";
@@ -48,7 +49,7 @@ export function Sidebar({
         collapsed ? "w-20" : "w-60"
       }`}
     >
-      <div className={`pb-3 pt-4 ${GLIDE} ${collapsed ? "px-2" : "px-4"}`}>
+      <div {...titleBar(`pb-3 ${GLIDE} ${collapsed ? "px-2" : "px-4"}`)}>
         <div className="flex items-center">
           <Logo className="h-8 w-8 shrink-0" />
           <p

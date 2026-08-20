@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { effectiveQuery, enabledGlobalFilters } from "../../shared/query.js";
 import type { AppConfig, GlobalFilter, SectionConfig } from "../../shared/types.js";
 import { slugify } from "../lib/format.js";
+import { titleBar } from "../lib/titlebar.js";
 import { ArrowUpIcon, CrowFootIcon, PlusIcon, TrashIcon } from "./icons.js";
 
 const GLOBAL_FILTER_SUGGESTIONS = [
@@ -175,7 +176,9 @@ export function SettingsPanel({
       >
         <div className="feather-sheen h-0.5 w-full" />
 
-        <header className="flex items-center justify-between border-b border-ink-200 px-5 py-4 dark:border-ink-800">
+        <header
+          {...titleBar("flex items-center justify-between border-b border-ink-200 px-5 pb-4 dark:border-ink-800")}
+        >
           <div>
             <h2 className="text-base font-semibold text-ink-900 dark:text-white">Sections &amp; filters</h2>
             <p className="mt-0.5 truncate text-xs text-ink-400 dark:text-ink-500">{configPath}</p>

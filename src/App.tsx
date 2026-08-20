@@ -9,6 +9,7 @@ import { enabledGlobalFilters } from "../shared/query.js";
 import { SNOOZED_SECTION } from "../shared/snoozed.js";
 import { api } from "./lib/api.js";
 import { openExternal } from "./lib/external.js";
+import { titleBar } from "./lib/titlebar.js";
 
 type Theme = "light" | "dark";
 
@@ -182,7 +183,11 @@ export function App() {
         />
 
         <main className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-ink-200 bg-ink-100/90 px-6 py-3 backdrop-blur dark:border-ink-800 dark:bg-ink-950/90">
+          <header
+            {...titleBar(
+              "sticky top-0 z-10 flex items-center gap-3 border-b border-ink-200 bg-ink-100/90 px-6 pb-3 backdrop-blur dark:border-ink-800 dark:bg-ink-950/90",
+            )}
+          >
             <div className="relative min-w-0 max-w-md flex-1">
               <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
               <input
