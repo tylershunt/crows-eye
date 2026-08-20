@@ -66,6 +66,17 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$app"
           codesign -dv "$app" 2>&1 | grep "Sealed Resources"
 
+      # The tarball of the same app, which tauri-action adds for updaters we do
+      # not serve, only makes a visitor choose between two identical downloads.
+      - name: Leave the dmg as the only download
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          gh release view "$TAG" --json assets \
+            -q '.assets[].name | select(endswith(".app.tar.gz"))' |
+            while read -r asset; do gh release delete-asset "$TAG" "$asset" --yes; done
+
       - name: Publish the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
