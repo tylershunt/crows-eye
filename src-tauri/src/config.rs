@@ -8,12 +8,19 @@ use std::path::{Path, PathBuf};
 
 const FALLBACK_COLOR: &str = "#9292ad";
 
+/// GitHub clears a review request the moment a review is submitted, so an open
+/// request of the viewer is one the viewer has not answered. A team's request
+/// can outlive a review by one of its members, which is what the second branch
+/// drops: those have been dealt with, whatever the team's row still says.
+const NEEDS_YOUR_REVIEW: &str = "is:open is:pr archived:false \
+    (user-review-requested:@me or (review-requested:@me -user-review-requested:@me -reviewed-by:@me))";
+
 pub fn default_config() -> AppConfig {
     AppConfig {
         refresh_interval_seconds: 120,
         global_filters: Vec::new(),
         sections: vec![
-            section("needs-your-review", "Needs your review", "is:open is:pr review-requested:@me archived:false", 50, false, "#f5c451").on_the_badge(),
+            section("needs-your-review", "Needs your review", NEEDS_YOUR_REVIEW, 50, false, "#f5c451").on_the_badge(),
             section("changes-requested", "Changes requested", "is:open is:pr author:@me review:changes-requested archived:false", 50, false, "#e5484d").on_the_badge(),
             section("ready-to-merge", "Ready to merge", "is:open is:pr author:@me review:approved -is:draft archived:false", 50, false, "#3dd68c"),
             section("waiting-on-reviewers", "Waiting on reviewers", "is:open is:pr author:@me -review:approved -review:changes-requested -is:draft archived:false", 50, false, "#4f8cff"),

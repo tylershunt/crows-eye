@@ -73,11 +73,11 @@ export interface PullRequest {
   latestReviews: Review[];
 }
 
-/** A user-configured group of pull requests, defined by a GitHub search query. */
+/** A user-configured group of pull requests, defined by a query. */
 export interface SectionConfig {
   id: string;
   title: string;
-  /** GitHub issue-search syntax, e.g. `is:open is:pr review-requested:@me`. */
+  /** Crow's Eye query syntax, e.g. `is:open is:pr review:re-requested`. */
   query: string;
   /** Maximum pull requests to fetch and display; GitHub caps a search page at 100. */
   limit: number;
@@ -89,10 +89,10 @@ export interface SectionConfig {
 }
 
 /**
- * Search terms ANDed into every section's query, narrowing all sections at once.
+ * A query ANDed into every section's query, narrowing all sections at once.
  *
- * Typically exclusions such as `-author:app/dependabot`, but any GitHub search
- * syntax is allowed.
+ * Typically exclusions such as `-author:app/dependabot`, but the whole query
+ * language is allowed.
  */
 export interface GlobalFilter {
   id: string;
@@ -109,11 +109,14 @@ export interface AppConfig {
 /** One section's config paired with the pull requests its query returned. */
 export interface SectionResult {
   config: SectionConfig;
-  /** The section's own query combined with the enabled global filters. */
-  effectiveQuery: string;
   pullRequests: PullRequest[];
-  /** Total matches on GitHub, which may exceed `pullRequests.length` when capped by `limit`. */
+  /** Matches the section holds, which may exceed `pullRequests.length` when capped by `limit`. */
   totalCount: number;
+  /**
+   * Whether `totalCount` counts only as far as the first `limit` GitHub
+   * returned, which happens when a local qualifier sifts a capped search.
+   */
+  countIsPartial: boolean;
   error: string | null;
   /**
    * For a section assembled out of the others, the section each pull request
@@ -126,4 +129,17 @@ export interface DashboardResponse {
   viewer: Actor;
   sections: SectionResult[];
   rateLimitRemaining: number;
+}
+
+/** What a query comes to: the searches GitHub runs, and advice about them. */
+export interface QueryPlan {
+  searches: PlannedSearch[];
+  warnings: string[];
+}
+
+export interface PlannedSearch {
+  /** What GitHub is asked, in its own search syntax. */
+  query: string;
+  /** The qualifiers GitHub cannot answer, asked of the rows it returns. */
+  keptLocally: string[];
 }

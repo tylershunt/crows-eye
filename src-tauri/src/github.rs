@@ -1,12 +1,14 @@
 //! The GitHub GraphQL calls behind the dashboard.
 
 use crate::error::{AppError, Result};
+use crate::query::{self, QueryPlan};
 use crate::types::{
-    effective_query, Actor, AppConfig, DashboardResponse, Label, PullRequest, Review, SectionConfig,
+    Actor, AppConfig, DashboardResponse, GlobalFilter, Label, PullRequest, Review, SectionConfig,
     SectionResult,
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
+use std::collections::HashSet;
 
 const GRAPHQL_ENDPOINT: &str = "https://api.github.com/graphql";
 
@@ -63,19 +65,22 @@ fn search_document() -> String {
     )
 }
 
-/// Resolves each section's search concurrently.
+/// Resolves each section's searches concurrently.
 ///
-/// A section whose query GitHub rejects yields a `SectionResult` with `error` set
-/// rather than failing the whole dashboard.
+/// A section whose query GitHub rejects, or whose query does not compile, yields
+/// a `SectionResult` with `error` set rather than failing the whole dashboard.
 pub async fn fetch_dashboard(
     client: &reqwest::Client,
     token: &str,
     config: &AppConfig,
 ) -> Result<DashboardResponse> {
     let viewer_request = graphql::<ViewerData>(client, token, VIEWER_DOCUMENT, json!({}));
-    let section_requests = futures::future::join_all(config.sections.iter().map(|section| {
-        fetch_section(client, token, section, effective_query(&section.query, &config.global_filters))
-    }));
+    let section_requests = futures::future::join_all(
+        config
+            .sections
+            .iter()
+            .map(|section| fetch_section(client, token, section, &config.global_filters)),
+    );
 
     let (viewer, sections) = futures::join!(viewer_request, section_requests);
     let viewer = viewer?;
@@ -97,42 +102,110 @@ struct Fetched {
     remaining: i64,
 }
 
+/// One search's answer.
+struct Page {
+    pull_requests: Vec<PullRequest>,
+    /// Matches GitHub holds, which exceeds `pull_requests.len()` past the limit.
+    issue_count: i64,
+    remaining: i64,
+}
+
 async fn fetch_section(
     client: &reqwest::Client,
     token: &str,
     config: &SectionConfig,
-    query: String,
+    global_filters: &[GlobalFilter],
 ) -> Fetched {
-    let variables = json!({ "query": query, "limit": config.limit });
+    let plan = match query::plan(&config.query, global_filters) {
+        Ok(plan) => plan,
+        Err(error) => return failed(config, error.to_string()),
+    };
+
+    let answers = futures::future::join_all(
+        plan.searches.iter().map(|search| fetch_page(client, token, &search.query, config.limit)),
+    )
+    .await;
+
+    let mut pages = Vec::with_capacity(answers.len());
+    for answer in answers {
+        match answer {
+            Ok(page) => pages.push(page),
+            Err(message) => return failed(config, message),
+        }
+    }
+
+    Fetched {
+        remaining: pages.iter().map(|page| page.remaining).min().unwrap_or(i64::MAX),
+        result: assemble(config, &plan, pages),
+    }
+}
+
+async fn fetch_page(
+    client: &reqwest::Client,
+    token: &str,
+    query: &str,
+    limit: u32,
+) -> std::result::Result<Page, String> {
+    let variables = json!({ "query": query, "limit": limit });
 
     match graphql_allowing_partial::<SearchData>(client, token, &search_document(), variables).await {
         Ok((Some(data), _)) if data.search.is_some() => {
             let search = data.search.expect("checked above");
-            Fetched {
+            Ok(Page {
+                pull_requests: search.nodes.iter().filter_map(into_pull_request).collect(),
+                issue_count: search.issue_count,
                 remaining: data.rate_limit.map_or(i64::MAX, |limit| limit.remaining),
-                result: SectionResult {
-                    config: config.clone(),
-                    effective_query: query,
-                    pull_requests: search.nodes.iter().filter_map(into_pull_request).collect(),
-                    total_count: search.issue_count,
-                    error: None,
-                    home_sections: None,
-                },
-            }
+            })
         }
-        Ok((_, errors)) => failed(config, query, first_message(&errors)),
-        Err(error) => failed(config, query, error.to_string()),
+        Ok((_, errors)) => Err(first_message(&errors)),
+        Err(error) => Err(error.to_string()),
     }
 }
 
-fn failed(config: &SectionConfig, query: String, message: String) -> Fetched {
+/// Gathers the plan's answers into the section: one pull request per id, sifted
+/// by the checks GitHub could not make.
+fn assemble(config: &SectionConfig, plan: &QueryPlan, pages: Vec<Page>) -> SectionResult {
+    let github_counts_alone = plan.github_counts_alone();
+    let capped = pages.iter().any(|page| page.issue_count > page.pull_requests.len() as i64);
+    let counted: i64 = pages.iter().map(|page| page.issue_count).sum();
+
+    let mut seen = HashSet::new();
+    let mut kept = Vec::new();
+    for (search, page) in plan.searches.iter().zip(pages) {
+        for pull_request in page.pull_requests {
+            if search.holds(&pull_request) && seen.insert(pull_request.id.clone()) {
+                kept.push(pull_request);
+            }
+        }
+    }
+
+    // GitHub ranks each search's matches on its own, and two such rankings have
+    // no order between them, so a union takes the order the dashboard reads by.
+    if plan.searches.len() > 1 {
+        kept.sort_by(|left, right| right.updated_at.cmp(&left.updated_at));
+    }
+
+    let total_count = if github_counts_alone { counted } else { kept.len() as i64 };
+    kept.truncate(config.limit as usize);
+
+    SectionResult {
+        config: config.clone(),
+        pull_requests: kept,
+        total_count,
+        count_is_partial: capped && !github_counts_alone,
+        error: None,
+        home_sections: None,
+    }
+}
+
+fn failed(config: &SectionConfig, message: String) -> Fetched {
     Fetched {
         remaining: i64::MAX,
         result: SectionResult {
             config: config.clone(),
-            effective_query: query,
             pull_requests: Vec::new(),
             total_count: 0,
+            count_is_partial: false,
             error: Some(message),
             home_sections: None,
         },
@@ -414,28 +487,173 @@ mod tests {
         assert!(into_pull_request(&stacked).unwrap().targets_non_default_branch);
     }
 
+    fn row(id: &str, updated_at: &str) -> Value {
+        let mut raw = node();
+        raw["id"] = json!(id);
+        raw["updatedAt"] = json!(updated_at);
+        raw
+    }
+
+    fn page(rows: &[Value], issue_count: i64) -> Page {
+        Page {
+            pull_requests: rows.iter().filter_map(into_pull_request).collect(),
+            issue_count,
+            remaining: 4999,
+        }
+    }
+
+    fn section(query: &str, limit: u32) -> SectionConfig {
+        SectionConfig {
+            id: query.into(),
+            title: "Mine".into(),
+            query: query.into(),
+            limit,
+            collapsed: false,
+            color: "#000000".into(),
+            counts_toward_badge: false,
+        }
+    }
+
+    fn ids(result: &SectionResult) -> Vec<&str> {
+        result.pull_requests.iter().map(|pull_request| pull_request.id.as_str()).collect()
+    }
+
+    #[test]
+    fn one_search_is_reported_the_way_github_counted_it() {
+        let config = section("is:open author:@me", 50);
+        let plan = query::plan(&config.query, &[]).unwrap();
+
+        let result = assemble(&config, &plan, vec![page(&[row("a", "2026-08-01T00:00:00Z")], 137)]);
+
+        assert_eq!(ids(&result), ["a"]);
+        assert_eq!(result.total_count, 137);
+        assert!(!result.count_is_partial);
+    }
+
+    #[test]
+    fn a_pull_request_matched_by_two_branches_is_listed_once() {
+        let config = section("author:@me or mentions:@me", 50);
+        let plan = query::plan(&config.query, &[]).unwrap();
+        let shared = row("a", "2026-08-01T00:00:00Z");
+
+        let result = assemble(
+            &config,
+            &plan,
+            vec![
+                page(std::slice::from_ref(&shared), 1),
+                page(&[shared, row("b", "2026-08-03T00:00:00Z")], 2),
+            ],
+        );
+
+        assert_eq!(ids(&result), ["b", "a"]);
+        assert_eq!(result.total_count, 2);
+    }
+
+    #[test]
+    fn a_union_is_ordered_by_what_moved_last() {
+        let config = section("author:@me or mentions:@me", 50);
+        let plan = query::plan(&config.query, &[]).unwrap();
+
+        let result = assemble(
+            &config,
+            &plan,
+            vec![
+                page(&[row("old", "2026-01-01T00:00:00Z"), row("new", "2026-08-20T00:00:00Z")], 2),
+                page(&[row("middle", "2026-05-05T00:00:00Z")], 1),
+            ],
+        );
+
+        assert_eq!(ids(&result), ["new", "middle", "old"]);
+    }
+
+    #[test]
+    fn a_local_qualifier_sifts_the_rows_and_the_count_with_them() {
+        let config = section("author:@me unread:yes", 50);
+        let plan = query::plan(&config.query, &[]).unwrap();
+        let mut unread = row("unread", "2026-08-01T00:00:00Z");
+        unread["isReadByViewer"] = json!(false);
+
+        let result = assemble(&config, &plan, vec![page(&[unread, row("read", "2026-08-02T00:00:00Z")], 2)]);
+
+        assert_eq!(ids(&result), ["unread"]);
+        assert_eq!(result.total_count, 1);
+    }
+
+    #[test]
+    fn a_count_is_partial_only_where_a_sifted_search_was_capped() {
+        let config = section("author:@me unread:yes", 50);
+        let plan = query::plan(&config.query, &[]).unwrap();
+        let rows = [row("a", "2026-08-01T00:00:00Z")];
+
+        assert!(!assemble(&config, &plan, vec![page(&rows, 1)]).count_is_partial);
+        assert!(assemble(&config, &plan, vec![page(&rows, 200)]).count_is_partial);
+    }
+
+    #[test]
+    fn a_section_shows_no_more_than_its_limit_but_counts_what_it_found() {
+        let config = section("author:@me or mentions:@me", 1);
+        let plan = query::plan(&config.query, &[]).unwrap();
+
+        let result = assemble(
+            &config,
+            &plan,
+            vec![page(&[row("a", "2026-08-01T00:00:00Z")], 1), page(&[row("b", "2026-08-02T00:00:00Z")], 1)],
+        );
+
+        assert_eq!(ids(&result), ["b"]);
+        assert_eq!(result.total_count, 2);
+    }
+
     /// Run with `cargo test -- --ignored` and a GitHub credential to hand.
     #[tokio::test]
     #[ignore = "calls GitHub"]
     async fn a_live_search_names_the_viewer_and_fails_no_section() {
-        let token = crate::token::TokenCache::default().resolve().await.unwrap();
         let config = crate::types::AppConfig {
-            sections: vec![crate::types::SectionConfig {
-                id: "mine".into(),
-                title: "Mine".into(),
-                query: "is:open is:pr author:@me archived:false".into(),
-                limit: 5,
-                collapsed: false,
-                color: "#000000".into(),
-                counts_toward_badge: false,
-            }],
+            sections: vec![
+                section("is:open is:pr author:@me archived:false", 5),
+                section("is:open is:pr (author:@me or review-requested:@me) -stacked:yes", 20),
+            ],
             global_filters: Vec::new(),
             refresh_interval_seconds: 120,
         };
 
-        let dashboard = fetch_dashboard(&reqwest::Client::new(), &token, &config).await.unwrap();
+        let dashboard = live(&config).await;
 
         assert!(!dashboard.viewer.login.is_empty());
-        assert_eq!(dashboard.sections[0].error, None);
+        for section in &dashboard.sections {
+            assert_eq!(section.error, None, "for `{}`", section.config.query);
+        }
+    }
+
+    /// Run with `cargo test -- --ignored` and a GitHub credential to hand.
+    #[tokio::test]
+    #[ignore = "calls GitHub"]
+    async fn a_live_union_holds_one_row_per_pull_request_and_every_local_check() {
+        let branches = section("is:open is:pr (author:@me or review-requested:@me) archived:false", 50);
+        let config = crate::types::AppConfig {
+            sections: vec![
+                branches.clone(),
+                SectionConfig { query: format!("{} -stacked:yes", branches.query), ..branches },
+            ],
+            global_filters: Vec::new(),
+            refresh_interval_seconds: 120,
+        };
+
+        let dashboard = live(&config).await;
+        let [both, on_the_default_branch] = &dashboard.sections[..2] else { panic!("two sections") };
+
+        let mut ids: Vec<&str> = both.pull_requests.iter().map(|row| row.id.as_str()).collect();
+        let found = ids.len();
+        ids.sort_unstable();
+        ids.dedup();
+        assert_eq!(ids.len(), found, "a pull request matched by both branches was listed twice");
+
+        assert!(on_the_default_branch.pull_requests.iter().all(|row| !row.targets_non_default_branch));
+        assert!(on_the_default_branch.total_count <= both.total_count);
+    }
+
+    async fn live(config: &crate::types::AppConfig) -> DashboardResponse {
+        let token = crate::token::TokenCache::default().resolve().await.unwrap();
+        fetch_dashboard(&reqwest::Client::new(), &token, config).await.unwrap()
     }
 }

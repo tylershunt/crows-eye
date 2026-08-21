@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { effectiveQuery, enabledGlobalFilters } from "../../shared/query.js";
 import type { AppConfig, GlobalFilter, SectionConfig } from "../../shared/types.js";
 import { slugify } from "../lib/format.js";
 import { titleBar } from "../lib/titlebar.js";
+import { QueryPreview } from "./QueryPreview.js";
 import { ArrowUpIcon, CrowFootIcon, PlusIcon, TrashIcon } from "./icons.js";
 
 const GLOBAL_FILTER_SUGGESTIONS = [
@@ -35,8 +35,22 @@ const QUERY_TOKENS = [
   "org:",
   "repo:",
   "label:",
-  "draft:false",
   "sort:updated-desc",
+];
+
+/** The half of the language GitHub's search box has no answer for. */
+const CROW_TOKENS = [
+  "or",
+  "not",
+  "review:re-requested",
+  "checks:failing",
+  "idle:>1w",
+  "unread:yes",
+  "conflicts:yes",
+  "stacked:yes",
+  "reviewers:0",
+  "size:>500",
+  "files:>20",
 ];
 
 interface SettingsPanelProps {
@@ -333,12 +347,7 @@ export function SettingsPanel({
                 className="mt-2 w-full resize-y rounded-lg border border-ink-200 bg-ink-50 px-3 py-2 font-mono text-xs text-ink-800 focus:border-sheen-400 focus:outline-none dark:border-ink-700 dark:bg-ink-800 dark:text-ink-200"
               />
 
-              {enabledGlobalFilters(draft.globalFilters).length > 0 && (
-                <p className="mt-1.5 break-words font-mono text-[10px] leading-relaxed text-ink-400 dark:text-ink-500">
-                  <span className="not-italic">Runs as:</span>{" "}
-                  {effectiveQuery(section.query, draft.globalFilters)}
-                </p>
-              )}
+              <QueryPreview query={section.query} globalFilters={draft.globalFilters} />
 
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 <label className="flex items-center gap-1.5 text-xs text-ink-500 dark:text-ink-400">
@@ -374,7 +383,7 @@ export function SettingsPanel({
                   On the dock badge
                 </label>
 
-                <div className="flex items-center gap-1">
+                <div className="ml-auto flex items-center gap-1">
                   {SWATCHES.map((swatch) => (
                     <button
                       key={swatch}
@@ -391,17 +400,6 @@ export function SettingsPanel({
                     </button>
                   ))}
                 </div>
-
-                <a
-                  href={`https://github.com/search?type=pullrequests&q=${encodeURIComponent(
-                    effectiveQuery(section.query, draft.globalFilters),
-                  )}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="ml-auto text-xs text-sheen-600 hover:underline dark:text-sheen-400"
-                >
-                  Test on GitHub
-                </a>
               </div>
             </div>
           ))}
@@ -432,6 +430,28 @@ export function SettingsPanel({
                 </button>
               ))}
             </div>
+
+            <p className="mt-3 border-t border-ink-100 pt-3 text-xs font-semibold uppercase tracking-wide text-ink-400 dark:border-ink-800 dark:text-ink-500">
+              Beyond GitHub&rsquo;s own syntax
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {CROW_TOKENS.map((token) => (
+                <button
+                  key={token}
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => insertToken(token)}
+                  className="rounded-md bg-sheen-500/10 px-2 py-1 font-mono text-[11px] text-sheen-700 transition hover:bg-sheen-500/20 dark:bg-sheen-500/15 dark:text-sheen-300 dark:hover:bg-sheen-500/25"
+                >
+                  {token}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-ink-500 dark:text-ink-400">
+              A space still means <em>and</em>, and parentheses group. Anything GitHub understands works
+              unchanged; the rest is checked here, on the pull requests a search brings back.
+            </p>
+
             <a
               href="https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests"
               target="_blank"

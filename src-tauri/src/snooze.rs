@@ -140,9 +140,9 @@ pub fn with_snoozed_section(
     held.sort_by(|(left, _), (right, _)| updated(right).cmp(&updated(left)));
     awake.sections.push(SectionResult {
         config: snoozed_section(),
-        effective_query: String::new(),
         error: None,
         total_count: held.len() as i64,
+        count_is_partial: false,
         home_sections: Some(
             held.iter().map(|(pull_request, home)| (pull_request.id.clone(), home.clone())).collect(),
         ),
@@ -202,9 +202,9 @@ mod tests {
                 color: "#000000".into(),
                 counts_toward_badge: false,
             },
-            effective_query: String::new(),
             error: None,
             total_count: total_count.unwrap_or(rows.len() as i64),
+            count_is_partial: false,
             pull_requests: rows.iter().map(|(id, at)| pull_request(id, at)).collect(),
             home_sections: None,
         }

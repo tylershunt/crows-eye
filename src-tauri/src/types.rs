@@ -103,11 +103,12 @@ pub struct AppConfig {
 #[serde(rename_all = "camelCase")]
 pub struct SectionResult {
     pub config: SectionConfig,
-    /// The section's own query combined with the enabled global filters.
-    pub effective_query: String,
     pub pull_requests: Vec<PullRequest>,
-    /// Total matches on GitHub, which may exceed `pull_requests.len()` when capped by `limit`.
+    /// Matches the section holds, which may exceed `pull_requests.len()` when capped by `limit`.
     pub total_count: i64,
+    /// Whether `total_count` counts only as far as the first `limit` GitHub
+    /// returned, which happens when a local qualifier sifts a capped search.
+    pub count_is_partial: bool,
     pub error: Option<String>,
     /// For a section assembled out of the others, the section each pull request
     /// would sit in if this one were not holding it, keyed by pull request id.
@@ -128,52 +129,4 @@ pub struct DashboardResponse {
 pub struct ConfigResponse {
     pub config: AppConfig,
     pub path: String,
-}
-
-/// Combines a section's query with the enabled global filters into the single
-/// query sent to GitHub.
-///
-/// GitHub's issue search ANDs its terms, so appending a global filter narrows
-/// the section rather than widening it.
-pub fn effective_query(section_query: &str, global_filters: &[GlobalFilter]) -> String {
-    std::iter::once(section_query)
-        .chain(
-            global_filters
-                .iter()
-                .filter(|filter| filter.enabled)
-                .map(|filter| filter.query.as_str()),
-        )
-        .map(str::trim)
-        .filter(|part| !part.is_empty())
-        .collect::<Vec<_>>()
-        .join(" ")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn filter(query: &str, enabled: bool) -> GlobalFilter {
-        GlobalFilter { id: query.into(), query: query.into(), enabled }
-    }
-
-    #[test]
-    fn enabled_global_filters_narrow_a_section() {
-        let filters = vec![filter("-author:app/dependabot", true), filter("org:acme", true)];
-
-        assert_eq!(
-            effective_query("is:open is:pr", &filters),
-            "is:open is:pr -author:app/dependabot org:acme"
-        );
-    }
-
-    #[test]
-    fn a_disabled_filter_leaves_the_query_alone() {
-        assert_eq!(effective_query("is:open", &[filter("org:acme", false)]), "is:open");
-    }
-
-    #[test]
-    fn a_blank_filter_adds_no_separator() {
-        assert_eq!(effective_query("is:open", &[filter("   ", true)]), "is:open");
-    }
 }

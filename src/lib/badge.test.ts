@@ -14,7 +14,7 @@ function section(id: string, totalCount: number, countsTowardBadge: boolean): Se
     countsTowardBadge,
   };
 
-  return { config, effectiveQuery: "is:pr", pullRequests: [], totalCount, error: null };
+  return { config, pullRequests: [], totalCount, countIsPartial: false, error: null };
 }
 
 test("the badge adds up the sections asked to count towards it", () => {

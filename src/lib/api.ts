@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { AppConfig, DashboardResponse } from "../../shared/types.js";
+import type { AppConfig, DashboardResponse, GlobalFilter, QueryPlan } from "../../shared/types.js";
 
 export interface ConfigResponse {
   config: AppConfig;
@@ -22,6 +22,8 @@ export const api = {
   config: () => call<ConfigResponse>("get_config"),
   saveConfig: (config: AppConfig) => call<ConfigResponse>("save_config", { config }),
   resetConfig: () => call<ConfigResponse>("reset_config"),
+  explainQuery: (query: string, globalFilters: GlobalFilter[]) =>
+    call<QueryPlan>("explain_query", { query, globalFilters }),
   snooze: (pullRequestId: string) => call<void>("snooze", { pullRequestId }),
   wake: (pullRequestId: string) => call<void>("wake", { pullRequestId }),
 };

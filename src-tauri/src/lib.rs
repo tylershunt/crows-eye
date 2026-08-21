@@ -1,6 +1,7 @@
 mod config;
 mod error;
 mod github;
+mod query;
 mod snooze;
 mod token;
 mod types;
@@ -35,6 +36,13 @@ fn save_config(crow: tauri::State<'_, Crow>, config: Value) -> Result<ConfigResp
 fn reset_config(crow: tauri::State<'_, Crow>) -> Result<ConfigResponse> {
     let defaults = serde_json::to_value(config::default_config()).expect("config serializes");
     Ok(crow.config.respond(crow.config.write(&defaults)?))
+}
+
+/// What `query` would run as, narrowed by `global_filters`, for a settings panel
+/// showing the user their query before it is saved.
+#[tauri::command]
+fn explain_query(query: String, global_filters: Vec<types::GlobalFilter>) -> Result<query::QueryPlan> {
+    crate::query::plan(&query, &global_filters)
 }
 
 #[tauri::command]
@@ -84,6 +92,7 @@ pub fn run() {
             get_config,
             save_config,
             reset_config,
+            explain_query,
             get_dashboard,
             snooze,
             wake

@@ -26,7 +26,7 @@ export function Section({
   onToggleSnooze,
   loading,
 }: SectionProps) {
-  const { config, pullRequests, totalCount, error } = section;
+  const { config, pullRequests, totalCount, countIsPartial, error } = section;
   const hiddenCount = totalCount - pullRequests.length;
   const groups = groupIntoStacks(pullRequests);
   const ordered = groups.flatMap((group) => group.rows.map((row) => row.pullRequest));
@@ -47,8 +47,16 @@ export function Section({
             />
             <SectionMarker config={config} glow className="h-4 w-4 shrink-0 text-sm" />
             <h2 className="truncate text-sm font-semibold text-ink-900 dark:text-ink-100">{config.title}</h2>
-            <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs font-medium tabular-nums text-ink-600 dark:bg-ink-800 dark:text-ink-300">
+            <span
+              title={
+                countIsPartial
+                  ? `At least ${totalCount}: this section's query is answered partly here, over the first ${config.limit} GitHub returned`
+                  : undefined
+              }
+              className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs font-medium tabular-nums text-ink-600 dark:bg-ink-800 dark:text-ink-300"
+            >
               {totalCount}
+              {countIsPartial && "+"}
             </span>
           </button>
 
