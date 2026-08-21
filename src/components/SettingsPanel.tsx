@@ -54,6 +54,8 @@ const CROW_TOKENS = [
   "files:>20",
 ];
 
+const PALETTE_STORAGE_KEY = "crows-foot-token-palette";
+
 interface SettingsPanelProps {
   config: AppConfig;
   configPath: string;
@@ -72,11 +74,17 @@ export function SettingsPanel({
   onClose,
 }: SettingsPanelProps) {
   const [draft, setDraft] = useState<AppConfig>(config);
-  const [paletteOpen, setPaletteOpen] = useState(true);
+  const [paletteOpen, setPaletteOpen] = useState(
+    () => localStorage.getItem(PALETTE_STORAGE_KEY) !== "folded",
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const activeQueryRef = useRef<HTMLTextAreaElement | null>(null);
   const focusedQueryRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem(PALETTE_STORAGE_KEY, paletteOpen ? "open" : "folded");
+  }, [paletteOpen]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
