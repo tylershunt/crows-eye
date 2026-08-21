@@ -1,4 +1,4 @@
-# Crow's Eye
+# Crow's Foot
 
 A desktop dashboard for the GitHub pull requests that need your attention,
 grouped into sections you configure. Each section is a query in a language that
@@ -6,15 +6,15 @@ takes GitHub's issue search whole and adds what it is missing: `or`, `not`,
 parentheses, and qualifiers GitHub has no answer for, such as "I reviewed this
 and they asked again".
 
-Crow's Eye is a [Tauri](https://tauri.app) app: a React interface over a Rust
+Crow's Foot is a [Tauri](https://tauri.app) app: a React interface over a Rust
 core that talks to GitHub. Everything stays on your machine, and the built app
 has no runtime of its own to install.
 
 ## Download
 
 Grab the `.dmg` from [the latest
-release](https://github.com/tylershunt/crows-eye/releases/latest) — one
-universal build for Apple Silicon and Intel — and drag Crow's Eye to
+release](https://github.com/tylershunt/crows-foot/releases/latest) — one
+universal build for Apple Silicon and Intel — and drag Crow's Foot to
 Applications.
 
 It is ad-hoc signed but not notarized, so macOS asks about it once: open it the
@@ -27,7 +27,7 @@ To run the app:
 
 - The [`gh` CLI](https://cli.github.com), authenticated: `gh auth login`
 
-Crow's Eye borrows the token `gh` already stores, so there is nothing else to set
+Crow's Foot borrows the token `gh` already stores, so there is nothing else to set
 up and no secret to paste anywhere. To use a different credential, set
 `GITHUB_TOKEN` (or `GH_TOKEN`) and it takes precedence. The token needs the
 `repo` scope to see private pull requests and `read:org` for team review
@@ -41,7 +41,7 @@ To build it, add [Node 20 or newer](https://nodejs.org) and a
 ```bash
 npm install
 npm run dev     # the app, with the interface hot-reloading
-npm run build   # Crow's Eye.app and a .dmg, in src-tauri/target/release/bundle
+npm run build   # Crow's Foot.app and a .dmg, in src-tauri/target/release/bundle
 ```
 
 `npm test` runs both suites: the interface's tests under Node's test runner and
@@ -54,13 +54,13 @@ release, once `codesign` confirms the bundle is sealed.
 
 ### Where things live
 
-| Variable                | Default                     | Purpose             |
-| ----------------------- | --------------------------- | ------------------- |
-| `CROWS_EYE_CONFIG`      | `<app data>/config.json`    | Sections and filters |
-| `CROWS_EYE_SNOOZE_DB`   | `<app data>/snoozes.db`     | Snoozed pull requests |
-| `CROWS_EYE_WEB_PORT`    | 5273                        | Vite dev server     |
+| Variable               | Default                  | Purpose               |
+| ---------------------- | ------------------------ | --------------------- |
+| `CROWS_FOOT_CONFIG`    | `<app data>/config.json` | Sections and filters  |
+| `CROWS_FOOT_SNOOZE_DB` | `<app data>/snoozes.db`  | Snoozed pull requests |
+| `CROWS_FOOT_WEB_PORT`  | 5273                     | Vite dev server       |
 
-`<app data>` is `~/Library/Application Support/dev.tylershunt.crows-eye` on
+`<app data>` is `~/Library/Application Support/dev.tylershunt.crows-foot` on
 macOS.
 
 ## Configuring sections

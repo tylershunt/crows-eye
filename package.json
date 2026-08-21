@@ -1,5 +1,5 @@
 {
-  "name": "crows-eye",
+  "name": "crows-foot",
   "version": "0.3.0",
   "private": true,
   "type": "module",
@@ -15,12 +15,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tylershunt/crows-eye.git"
+    "url": "git+https://github.com/tylershunt/crows-foot.git"
   },
   "bugs": {
-    "url": "https://github.com/tylershunt/crows-eye/issues"
+    "url": "https://github.com/tylershunt/crows-foot/issues"
   },
-  "homepage": "https://github.com/tylershunt/crows-eye#readme",
+  "homepage": "https://github.com/tylershunt/crows-foot#readme",
   "engines": {
     "node": ">=20"
   },

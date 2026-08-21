@@ -291,7 +291,7 @@ async fn graphql_allowing_partial<T: for<'de> Deserialize<'de>>(
         .post(GRAPHQL_ENDPOINT)
         .bearer_auth(token)
         .header("Accept", "application/vnd.github+json")
-        .header("User-Agent", "crows-eye")
+        .header("User-Agent", "crows-foot")
         .json(&json!({ "query": document, "variables": variables }))
         .send()
         .await

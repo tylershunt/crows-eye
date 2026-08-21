@@ -310,7 +310,7 @@ mod tests {
 
     #[test]
     fn reading_a_missing_file_writes_the_defaults() {
-        let directory = std::env::temp_dir().join(format!("crows-eye-test-{}", std::process::id()));
+        let directory = std::env::temp_dir().join(format!("crows-foot-test-{}", std::process::id()));
         let store = ConfigStore::new(directory.join("config.json"));
 
         let config = store.read().unwrap();

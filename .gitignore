@@ -9,7 +9,7 @@ dist/
 # them in its own application support directory.
 data/
 
-# Credentials. Crow's Eye reads the gh CLI token, but GITHUB_TOKEN can override it.
+# Credentials. Crow's Foot reads the gh CLI token, but GITHUB_TOKEN can override it.
 .env
 .env.*
 

@@ -77,7 +77,7 @@ export interface PullRequest {
 export interface SectionConfig {
   id: string;
   title: string;
-  /** Crow's Eye query syntax, e.g. `is:open is:pr review:re-requested`. */
+  /** Crow's Foot query syntax, e.g. `is:open is:pr review:re-requested`. */
   query: string;
   /** Maximum pull requests to fetch and display; GitHub caps a search page at 100. */
   limit: number;

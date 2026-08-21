@@ -14,7 +14,7 @@ import { titleBar } from "./lib/titlebar.js";
 
 type Theme = "light" | "dark";
 
-const SIDEBAR_STORAGE_KEY = "crows-eye-sidebar";
+const SIDEBAR_STORAGE_KEY = "crows-foot-sidebar";
 
 export function App() {
   const [config, setConfig] = useState<AppConfig | null>(null);
@@ -96,7 +96,7 @@ export function App() {
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("crows-eye-theme", theme);
+    localStorage.setItem("crows-foot-theme", theme);
   }, [theme]);
 
   useEffect(() => {

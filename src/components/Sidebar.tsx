@@ -58,7 +58,7 @@ export function Sidebar({
               "max-w-40",
             )}`}
           >
-            Crow&rsquo;s Eye
+            Crow&rsquo;s Foot
           </p>
           <button
             type="button"
