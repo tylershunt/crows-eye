@@ -28,6 +28,7 @@ impl Local {
             "size" => Comparison::read(key, &term.value).map(Test::Size),
             "files" => Comparison::read(key, &term.value).map(Test::Files),
             "reviewers" => Comparison::read(key, &term.value).map(Test::Reviewers),
+            "approvals" => Comparison::read(key, &term.value).map(Test::Approvals),
             _ => return None,
         };
 
@@ -61,6 +62,8 @@ enum Test {
     Files(Comparison),
     /// Reviewers, people and teams alike, with a request still outstanding.
     Reviewers(Comparison),
+    /// Reviewers whose latest review approves, which is what GitHub counts too.
+    Approvals(Comparison),
 }
 
 impl Test {
@@ -72,8 +75,15 @@ impl Test {
             Self::Size(against) => against.holds(pull_request.additions + pull_request.deletions),
             Self::Files(against) => against.holds(pull_request.changed_files),
             Self::Reviewers(against) => against.holds(pull_request.requested_reviewers.len() as i64),
+            Self::Approvals(against) => against.holds(approvals(pull_request)),
         }
     }
+}
+
+/// A reviewer who approved and then asked for changes counts once, against, so
+/// this reads only the latest review each reviewer left.
+fn approvals(pull_request: &PullRequest) -> i64 {
+    pull_request.latest_reviews.iter().filter(|review| review.state == "APPROVED").count() as i64
 }
 
 fn flag(key: &str, value: &str) -> Result<bool> {
@@ -222,6 +232,21 @@ mod tests {
         assert!(local("files:12").holds(&pull_request));
         assert!(local("reviewers:>1").holds(&pull_request));
         assert!(!local("reviewers:0").holds(&pull_request));
+    }
+
+    #[test]
+    fn approvals_count_the_reviewers_whose_latest_review_approves() {
+        let review = |state: &str| crate::types::Review { state: state.into(), author: None };
+        let mut pull_request = pull_request();
+
+        assert!(local("approvals:0").holds(&pull_request));
+
+        pull_request.latest_reviews =
+            vec![review("APPROVED"), review("CHANGES_REQUESTED"), review("APPROVED")];
+
+        assert!(local("approvals:2").holds(&pull_request));
+        assert!(local("approvals:>=2").holds(&pull_request));
+        assert!(!local("approvals:>2").holds(&pull_request));
     }
 
     #[test]

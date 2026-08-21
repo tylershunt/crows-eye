@@ -652,6 +652,28 @@ mod tests {
         assert!(on_the_default_branch.total_count <= both.total_count);
     }
 
+    /// Run with `cargo test -- --ignored` and a GitHub credential to hand.
+    #[tokio::test]
+    #[ignore = "calls GitHub"]
+    async fn a_live_section_counts_approvals_off_the_reviews_github_returns() {
+        let involved = "is:open is:pr involves:@me archived:false";
+        let config = crate::types::AppConfig {
+            sections: vec![
+                section(&format!("{involved} approvals:>=1"), 30),
+                section(&format!("{involved} approvals:0"), 30),
+            ],
+            global_filters: Vec::new(),
+            refresh_interval_seconds: 120,
+        };
+
+        let dashboard = live(&config).await;
+        let [approved, untouched] = &dashboard.sections[..2] else { panic!("two sections") };
+        let approves = |row: &PullRequest| row.latest_reviews.iter().any(|it| it.state == "APPROVED");
+
+        assert!(approved.pull_requests.iter().all(approves));
+        assert!(!untouched.pull_requests.iter().any(approves));
+    }
+
     async fn live(config: &crate::types::AppConfig) -> DashboardResponse {
         let token = crate::token::TokenCache::default().resolve().await.unwrap();
         fetch_dashboard(&reqwest::Client::new(), &token, config).await.unwrap()

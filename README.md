@@ -128,9 +128,14 @@ is:open is:pr (review-requested:@me or assignee:@me) -author:@me
 
 **Qualifiers GitHub cannot answer**, which are asked of the pull requests a
 search brings back: `unread:yes`, `conflicts:yes`, `stacked:yes` (merges into a
-branch that is not the default), `reviewers:0`, `size:>500` (lines moved either
-way), and `files:>20`. Each takes `yes`/`no` or a count, and a count may lead
-with `>`, `>=`, `<`, or `<=`.
+branch that is not the default), `reviewers:0` (review requests still
+outstanding), `approvals:>=2` (reviewers whose latest review approves),
+`size:>500` (lines moved either way), and `files:>20`. Each takes `yes`/`no` or
+a count, and a count may lead with `>`, `>=`, `<`, or `<=`.
+
+`approvals:` counts, where GitHub's own `review:approved` only says whether a
+pull request cleared review as a whole, so `approvals:1 review:approved` finds
+what one person waved through.
 
 A query with an `or` in it becomes several GitHub searches, run at once and
 unioned by pull request, ordered by what moved last. Two rules follow from that,

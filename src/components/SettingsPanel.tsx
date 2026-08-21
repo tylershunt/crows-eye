@@ -49,6 +49,7 @@ const CROW_TOKENS = [
   "conflicts:yes",
   "stacked:yes",
   "reviewers:0",
+  "approvals:>=2",
   "size:>500",
   "files:>20",
 ];
