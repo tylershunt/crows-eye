@@ -30,7 +30,7 @@
     "active": true,
     "targets": ["app", "dmg"],
     "category": "DeveloperTool",
-    "shortDescription": "See your PR truth",
+    "shortDescription": "The pull requests that need you, grouped",
     "longDescription": "A local dashboard that groups the GitHub pull requests needing your attention into configurable sections.",
     "icon": [
       "icons/32x32.png",

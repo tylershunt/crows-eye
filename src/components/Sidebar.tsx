@@ -71,13 +71,6 @@ export function Sidebar({
             <SidebarIcon className="h-4 w-4" />
           </button>
         </div>
-        <p
-          className={`overflow-hidden whitespace-nowrap text-[10px] uppercase tracking-wider text-ink-400 dark:text-ink-500 ${GLIDE} ${
-            collapsed ? "mt-0 max-h-0 opacity-0" : "mt-1 max-h-4 opacity-100"
-          }`}
-        >
-          See your PR truth
-        </p>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 pt-3">
