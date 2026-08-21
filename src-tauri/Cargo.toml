@@ -1,6 +1,6 @@
 [package]
 name = "crows-eye"
-version = "0.2.0"
+version = "0.3.0"
 description = "A local dashboard that groups the GitHub pull requests needing your attention into configurable sections."
 authors = ["Tyler Hunt"]
 license = "MIT"
