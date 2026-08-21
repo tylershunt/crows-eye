@@ -3,7 +3,7 @@ import type { AppConfig, GlobalFilter, SectionConfig } from "../../shared/types.
 import { slugify } from "../lib/format.js";
 import { titleBar } from "../lib/titlebar.js";
 import { QueryPreview } from "./QueryPreview.js";
-import { ArrowUpIcon, CrowFootIcon, PlusIcon, TrashIcon } from "./icons.js";
+import { ArrowUpIcon, ChevronDownIcon, CrowFootIcon, PlusIcon, TrashIcon } from "./icons.js";
 
 const GLOBAL_FILTER_SUGGESTIONS = [
   "-author:app/dependabot",
@@ -72,6 +72,7 @@ export function SettingsPanel({
   onClose,
 }: SettingsPanelProps) {
   const [draft, setDraft] = useState<AppConfig>(config);
+  const [paletteOpen, setPaletteOpen] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const activeQueryRef = useRef<HTMLTextAreaElement | null>(null);
@@ -414,53 +415,74 @@ export function SettingsPanel({
             Add section
           </button>
 
-          <div className="rounded-xl border border-ink-200 bg-white p-4 dark:border-ink-800 dark:bg-ink-900">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-400 dark:text-ink-500">
-              Click to append to the focused query
-            </p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {QUERY_TOKENS.map((token) => (
-                <button
-                  key={token}
-                  type="button"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => insertToken(token)}
-                  className="rounded-md bg-ink-100 px-2 py-1 font-mono text-[11px] text-ink-600 transition hover:bg-sheen-500/15 hover:text-sheen-600 dark:bg-ink-800 dark:text-ink-300 dark:hover:bg-sheen-500/20 dark:hover:text-sheen-300"
-                >
-                  {token}
-                </button>
-              ))}
+          <div className="sticky bottom-0 z-10 rounded-xl border border-ink-200 bg-white/95 p-3 shadow-lg backdrop-blur dark:border-ink-800 dark:bg-ink-900/95">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => setPaletteOpen((open) => !open)}
+                aria-expanded={paletteOpen}
+                title={paletteOpen ? "Hide the tokens" : "Show the tokens"}
+                className="flex flex-1 items-center gap-1.5 text-left"
+              >
+                <ChevronDownIcon
+                  className={`h-3.5 w-3.5 shrink-0 text-ink-400 transition-transform ${
+                    paletteOpen ? "" : "-rotate-90"
+                  }`}
+                />
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-400 dark:text-ink-500">
+                  Click to append to the focused query
+                </p>
+              </button>
+              <a
+                href="https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests"
+                target="_blank"
+                rel="noreferrer"
+                className="shrink-0 text-[11px] text-sheen-600 hover:underline dark:text-sheen-400"
+              >
+                GitHub&rsquo;s reference
+              </a>
             </div>
 
-            <p className="mt-3 border-t border-ink-100 pt-3 text-xs font-semibold uppercase tracking-wide text-ink-400 dark:border-ink-800 dark:text-ink-500">
-              Beyond GitHub&rsquo;s own syntax
-            </p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {CROW_TOKENS.map((token) => (
-                <button
-                  key={token}
-                  type="button"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => insertToken(token)}
-                  className="rounded-md bg-sheen-500/10 px-2 py-1 font-mono text-[11px] text-sheen-700 transition hover:bg-sheen-500/20 dark:bg-sheen-500/15 dark:text-sheen-300 dark:hover:bg-sheen-500/25"
-                >
-                  {token}
-                </button>
-              ))}
-            </div>
-            <p className="mt-2 text-xs text-ink-500 dark:text-ink-400">
-              A space still means <em>and</em>, and parentheses group. Anything GitHub understands works
-              unchanged; the rest is checked here, on the pull requests a search brings back.
-            </p>
+            {paletteOpen && (
+              <>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {QUERY_TOKENS.map((token) => (
+                    <button
+                      key={token}
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => insertToken(token)}
+                      className="rounded-md bg-ink-100 px-2 py-1 font-mono text-[11px] text-ink-600 transition hover:bg-sheen-500/15 hover:text-sheen-600 dark:bg-ink-800 dark:text-ink-300 dark:hover:bg-sheen-500/20 dark:hover:text-sheen-300"
+                    >
+                      {token}
+                    </button>
+                  ))}
+                </div>
 
-            <a
-              href="https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests"
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 inline-block text-xs text-sheen-600 hover:underline dark:text-sheen-400"
-            >
-              Full GitHub search syntax reference
-            </a>
+                <p className="mt-2 border-t border-ink-100 pt-2 text-xs font-semibold uppercase tracking-wide text-ink-400 dark:border-ink-800 dark:text-ink-500">
+                  Beyond GitHub&rsquo;s own syntax
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {CROW_TOKENS.map((token) => (
+                    <button
+                      key={token}
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => insertToken(token)}
+                      className="rounded-md bg-sheen-500/10 px-2 py-1 font-mono text-[11px] text-sheen-700 transition hover:bg-sheen-500/20 dark:bg-sheen-500/15 dark:text-sheen-300 dark:hover:bg-sheen-500/25"
+                    >
+                      {token}
+                    </button>
+                  ))}
+                </div>
+
+                <p className="mt-2 text-[11px] text-ink-500 dark:text-ink-400">
+                  A space means <em>and</em>, parentheses group, and these last are checked here rather
+                  than by GitHub.
+                </p>
+              </>
+            )}
           </div>
         </div>
 
