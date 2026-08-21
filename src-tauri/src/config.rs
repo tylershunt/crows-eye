@@ -12,7 +12,7 @@ const FALLBACK_COLOR: &str = "#9292ad";
 /// request of the viewer is one the viewer has not answered. A team's request
 /// can outlive a review by one of its members, which is what the second branch
 /// drops: those have been dealt with, whatever the team's row still says.
-const NEEDS_YOUR_REVIEW: &str = "is:open is:pr archived:false \
+const NEEDS_YOUR_REVIEW: &str = "is:open is:pr archived:false -is:draft \
     (user-review-requested:@me or (review-requested:@me -user-review-requested:@me -reviewed-by:@me))";
 
 pub fn default_config() -> AppConfig {

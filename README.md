@@ -80,7 +80,7 @@ The defaults are:
 
 | Section              | Query                                                                                          |
 | -------------------- | ---------------------------------------------------------------------------------------------- |
-| Needs your review    | `is:open is:pr archived:false (user-review-requested:@me or (review-requested:@me -user-review-requested:@me -reviewed-by:@me))` |
+| Needs your review    | `is:open is:pr archived:false -is:draft (user-review-requested:@me or (review-requested:@me -user-review-requested:@me -reviewed-by:@me))` |
 | Changes requested    | `is:open is:pr author:@me review:changes-requested archived:false`                               |
 | Ready to merge       | `is:open is:pr author:@me review:approved -is:draft archived:false`                              |
 | Waiting on reviewers | `is:open is:pr author:@me -review:approved -review:changes-requested -is:draft archived:false`   |
